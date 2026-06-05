@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Production Agent UI</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #1e1e2e; color: #cdd6f4; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        #chat-box { width: 100%; max-width: 600px; height: 60vh; background: #313244; border-radius: 8px; padding: 20px; overflow-y: auto; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .message { margin-bottom: 15px; padding: 10px; border-radius: 5px; max-width: 80%; line-height: 1.4; }
+        .user { background: #89b4fa; color: #11111b; align-self: flex-end; margin-left: auto; }
+        .agent { background: #45475a; color: #cdd6f4; align-self: flex-start; margin-right: auto; }
+        .input-area { width: 100%; max-width: 640px; display: flex; gap: 10px; }
+        input { flex-grow: 1; padding: 15px; border-radius: 5px; border: none; background: #45475a; color: #cdd6f4; font-size: 16px; outline: none;}
+        button { padding: 15px 25px; border-radius: 5px; border: none; background: #a6e3a1; color: #11111b; font-weight: bold; cursor: pointer; transition: 0.2s;}
+        button:hover { background: #94e2d5; }
+    </style>
+</head>
+<body>
+    <h2>Gem - The Zoo Tour Guide 🦁</h2>
+    <div id="chat-box"></div>
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Ask about an animal..." onkeypress="if(event.key === 'Enter') sendMessage()">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const userId = "web_user_" + Math.floor(Math.random() * 10000);
+        const sessionId = "session_" + Math.floor(Math.random() * 10000);
+        const chatBox = document.getElementById('chat-box');
+
+        // Initialize Session on Load
+        async function initSession() {
+            await fetch(`/api/apps/production_agent/users/${userId}/sessions/${sessionId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ state: { user_type: "web_ui_user" } })
+            });
+            appendMessage('agent', "Hi there! I'm Gem, your zoo tour guide! What animal would you like to learn about today? 🦒");
+        }
+
+        function appendMessage(role, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+            msgDiv.innerText = text;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            appendMessage('user', text);
+            input.value = '';
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message agent';
+            typingDiv.innerText = 'Thinking... 🤔';
+            chatBox.appendChild(typingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/api/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_name: "production_agent",
+                        user_id: userId,
+                        session_id: sessionId,
+                        new_message: { role: "user", parts: [{ text: text }] }
+                    })
+                });
+                
+                const data = await response.json();
+                chatBox.removeChild(typingDiv);
+                
+                // Extract response based on standard ADK output schema
+                let agentReply = "Sorry, I couldn't understand the format.";
+                
+                // Parse the specific ADK 2.2.0 event structure
+                if (Array.isArray(data)) {
+                    // If the API returns an array of events, grab the last one
+                    const lastEvent = data[data.length - 1];
+                    if (lastEvent.content && lastEvent.content.parts) {
+                        agentReply = lastEvent.content.parts[0].text;
+                    }
+                } else if (data.content && data.content.parts) {
+                    // If the API returns the exact single object you provided
+                    agentReply = data.content.parts[0].text;
+                }
+
+                appendMessage('agent', agentReply);
+            } catch (error) {
+                chatBox.removeChild(typingDiv);
+                appendMessage('agent', 'Sorry, I lost connection to the server! 🔌');
+            }
+        }
+
+        initSession();
+    </script>
+</body>
+</html>
