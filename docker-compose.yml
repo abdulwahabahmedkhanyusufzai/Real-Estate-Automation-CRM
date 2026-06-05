@@ -30,6 +30,7 @@ services:
       - gemma-backend
    
   frontend:
+    # Builds the React app under ./frontend/frontend-app and serves via Nginx
     build:
       context: ./frontend
     image: local-frontend

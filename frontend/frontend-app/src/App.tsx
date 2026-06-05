@@ -1,0 +1,319 @@
+import { useState, useEffect } from 'react';
+import { Sidebar } from './components/Sidebar';
+import { ChatArea } from './components/ChatArea';
+import { SettingsModal, HelpModal } from './components/Modals';
+import type { ChatSession, GeminiModel, Message } from './types';
+
+const LOCAL_STORAGE_KEY = 'gemini_clone_chats';
+
+function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<GeminiModel>('Gemini 1.5 Flash');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // Generate / retrieve a stable user ID for session tracking
+  const [userId] = useState(() => {
+    const stored = localStorage.getItem('gemini_user_id');
+    if (stored) return stored;
+    const newId = 'web_user_' + Math.floor(Math.random() * 10000);
+    localStorage.setItem('gemini_user_id', newId);
+    return newId;
+  });
+
+  // Load chats from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as ChatSession[];
+        // Convert timestamp strings back to Date objects
+        const hydrated = parsed.map(session => ({
+          ...session,
+          createdAt: new Date(session.createdAt),
+          messages: session.messages.map(m => ({
+            ...m,
+            timestamp: new Date(m.timestamp)
+          }))
+        }));
+        setSessions(hydrated);
+        if (hydrated.length > 0) {
+          setCurrentSessionId(hydrated[0].id);
+        }
+      } catch (e) {
+        console.error('Failed to parse chat sessions', e);
+      }
+    } else {
+      // Seed with an initial welcome chat session matching index.html setup
+      const seedSession: ChatSession = {
+        id: 'seed-1',
+        title: 'Gem - Zoo Tour Guide',
+        model: 'Gemini 1.5 Flash',
+        createdAt: new Date(),
+        messages: [
+          {
+            id: 'm-seed-model',
+            role: 'model',
+            content: `Hi there! I'm Gem, your zoo tour guide! What animal would you like to learn about today? 🦒`,
+            timestamp: new Date(),
+            status: 'complete'
+          }
+        ]
+      };
+      setSessions([seedSession]);
+      setCurrentSessionId(seedSession.id);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([seedSession]));
+    }
+
+    // Auto collapse sidebar on smaller screens
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Sync active sessions to backend when selected
+  useEffect(() => {
+    if (currentSessionId) {
+      fetch(`/api/apps/production_agent/users/${userId}/sessions/${currentSessionId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: { user_type: "web_ui_user" } })
+      }).catch(err => console.error('Error auto-initializing session:', err));
+    }
+  }, [currentSessionId, userId]);
+
+  const saveSessionsToStorage = (updatedSessions: ChatSession[]) => {
+    setSessions(updatedSessions);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedSessions));
+  };
+
+  const handleNewChat = () => {
+    setCurrentSessionId(null);
+    // On mobile, close sidebar after clicking new chat
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  };
+
+  const handleSelectSession = (id: string) => {
+    setCurrentSessionId(id);
+    const session = sessions.find(s => s.id === id);
+    if (session) {
+      setSelectedModel(session.model);
+    }
+    // On mobile, close sidebar after selecting
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  };
+
+  const handleDeleteSession = (id: string) => {
+    const updated = sessions.filter(s => s.id !== id);
+    saveSessionsToStorage(updated);
+    
+    if (currentSessionId === id) {
+      if (updated.length > 0) {
+        setCurrentSessionId(updated[0].id);
+        setSelectedModel(updated[0].model);
+      } else {
+        setCurrentSessionId(null);
+      }
+    }
+  };
+
+  const handleSendMessage = async (content: string) => {
+    const userMessage: Message = {
+      id: `m-usr-${Date.now()}`,
+      role: 'user',
+      content,
+      timestamp: new Date(),
+      status: 'complete'
+    };
+
+    const modelPlaceholderMessage: Message = {
+      id: `m-mod-${Date.now()}`,
+      role: 'model',
+      content: '',
+      timestamp: new Date(Date.now() + 10),
+      status: 'sending'
+    };
+
+    let updatedSessions = [...sessions];
+    let activeSessionId = currentSessionId;
+    let isNewSession = false;
+
+    if (!activeSessionId) {
+      isNewSession = true;
+      // Create new session
+      const truncatedTitle = content.split(' ').slice(0, 4).join(' ') + (content.split(' ').length > 4 ? '...' : '');
+      activeSessionId = `s-${Date.now()}`;
+      const newSession: ChatSession = {
+        id: activeSessionId,
+        title: truncatedTitle || 'New Chat',
+        model: selectedModel,
+        createdAt: new Date(),
+        messages: [userMessage, modelPlaceholderMessage]
+      };
+      updatedSessions = [newSession, ...updatedSessions];
+      setCurrentSessionId(activeSessionId);
+      saveSessionsToStorage(updatedSessions);
+    } else {
+      // Append to current session
+      updatedSessions = sessions.map(session => {
+        if (session.id === activeSessionId) {
+          return {
+            ...session,
+            messages: [...session.messages, userMessage, modelPlaceholderMessage]
+          };
+        }
+        return session;
+      });
+      saveSessionsToStorage(updatedSessions);
+    }
+
+    try {
+      if (isNewSession) {
+        // Initialize backend session first
+        await fetch(`/api/apps/production_agent/users/${userId}/sessions/${activeSessionId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: { user_type: "web_ui_user" } })
+        });
+      }
+
+      // Execute prompt on production_agent
+      const response = await fetch('/api/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          app_name: 'production_agent',
+          user_id: userId,
+          session_id: activeSessionId,
+          new_message: { role: 'user', parts: [{ text: content }] }
+        })
+      });
+
+      const data = await response.json();
+      
+      let agentReply = "Sorry, I couldn't understand the format.";
+      if (Array.isArray(data)) {
+        const lastEvent = data[data.length - 1];
+        if (lastEvent.content && lastEvent.content.parts) {
+          agentReply = lastEvent.content.parts[0].text;
+        }
+      } else if (data.content && data.content.parts) {
+        agentReply = data.content.parts[0].text;
+      }
+
+      setSessions(prevSessions => {
+        const updated = prevSessions.map(session => {
+          if (session.id === activeSessionId) {
+            const messagesWithResponse = session.messages.map(msg => {
+              if (msg.id === modelPlaceholderMessage.id) {
+                return {
+                  ...msg,
+                  content: agentReply,
+                  status: 'complete' as const,
+                  timestamp: new Date()
+                };
+              }
+              return msg;
+            });
+            return {
+              ...session,
+              messages: messagesWithResponse
+            };
+          }
+          return session;
+        });
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+
+    } catch (error) {
+      console.error('API execution error:', error);
+      setSessions(prevSessions => {
+        const updated = prevSessions.map(session => {
+          if (session.id === activeSessionId) {
+            const messagesWithResponse = session.messages.map(msg => {
+              if (msg.id === modelPlaceholderMessage.id) {
+                return {
+                  ...msg,
+                  content: 'Sorry, I lost connection to the server! 🔌',
+                  status: 'error' as const,
+                  timestamp: new Date()
+                };
+              }
+              return msg;
+            });
+            return {
+              ...session,
+              messages: messagesWithResponse
+            };
+          }
+          return session;
+        });
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+    }
+  };
+
+  const currentSession = sessions.find(s => s.id === currentSessionId) || null;
+
+  return (
+    <div className="flex h-screen w-screen overflow-hidden bg-[#131314] text-[#e3e3e3]">
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        setIsOpen={setSidebarOpen}
+        sessions={sessions}
+        currentSessionId={currentSessionId}
+        onSelectSession={handleSelectSession}
+        onDeleteSession={handleDeleteSession}
+        onNewChat={handleNewChat}
+        openSettingsModal={() => setIsSettingsOpen(true)}
+        openHelpModal={() => setIsHelpOpen(true)}
+      />
+
+      {/* Main chat window */}
+      <ChatArea
+        currentSession={currentSession}
+        onSendMessage={handleSendMessage}
+        selectedModel={selectedModel}
+        setSelectedModel={setSelectedModel}
+        isSidebarOpen={sidebarOpen}
+        setIsSidebarOpen={setSidebarOpen}
+      />
+
+      {/* Modals */}
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
+      <HelpModal 
+        isOpen={isHelpOpen} 
+        onClose={() => setIsHelpOpen(false)} 
+      />
+
+      {/* Mobile Sidebar overlay backdrop */}
+      {sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden fixed inset-0 z-20 bg-black/50 backdrop-blur-xs transition-opacity"
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;

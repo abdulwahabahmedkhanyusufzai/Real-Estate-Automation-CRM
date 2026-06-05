@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --color-gemini-bg-dark: #131314;
+  --color-gemini-panel-dark: #1e1f20;
+  --color-gemini-border-dark: #2f3032;
+  --color-gemini-text-muted: #c4c7c5;
+  --color-gemini-blue: #1a73e8;
+  --color-gemini-blue-light: #8ab4f8;
+  --color-gemini-grad-start: #4285f4;
+  --color-gemini-grad-middle: #9b72cb;
+  --color-gemini-grad-end: #d96570;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-gemini-bg-dark);
+    color: #e3e3e3;
+    font-family: var(--font-sans);
+  }
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3c4043;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4f5357;
+}
+
+/* Shimmer animation for loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    #1e1f20 25%,
+    #2c2d30 50%,
+    #1e1f20 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Gradient text matching Gemini style */
+.gemini-gradient-text {
+  background: linear-gradient(
+    74deg,
+    #4285f4 0%,
+    #9b72cb 20%,
+    #d96570 40%,
+    #9b72cb 60%,
+    #4285f4 80%,
+    #d96570 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: textGradient 15s linear infinite;
+}
+
+@keyframes textGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Pulsing loader */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
