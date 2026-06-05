@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  gemma-backend:
+    image: local-gemma-backend
+    container_name: production-gemma-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Critical for your 2GB server to survive loading the model
+      - OLLAMA_NUM_CTX=512
+
+  adk-agent:
+    image: local-adk-agent
+    container_name: production-adk-agent
+    restart: unless-stopped
+    ports:
+      - "8000:8080"
+    environment:
+      - GOOGLE_CLOUD_PROJECT=local-dev
+      - GOOGLE_CLOUD_LOCATION=local
+      - GEMMA_MODEL_NAME=gemma3:270m
+      # Docker Compose automatically resolves service names to internal IPs
+      - OLLAMA_API_BASE=http://gemma-backend:8080
+      - PORT=8000
+    depends_on:
+      - gemma-backend
