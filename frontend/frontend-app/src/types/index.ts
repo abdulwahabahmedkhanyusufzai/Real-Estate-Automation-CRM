@@ -6,7 +6,7 @@ export interface Message {
   status: 'sending' | 'complete' | 'error';
 }
 
-export type GeminiModel = 'Gemini 1.5 Flash' | 'Gemini 1.5 Pro' | 'Gemini 2.0 Experimental';
+export type GeminiModel = 'Gemma Model' | 'RAG n8n Agent';
 
 export interface ChatSession {
   id: string;

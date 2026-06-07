@@ -50,7 +50,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const models: GeminiModel[] = ['Gemini 1.5 Flash', 'Gemini 1.5 Pro', 'Gemini 2.0 Experimental'];
+  const models: GeminiModel[] = ['Gemma Model', 'RAG n8n Agent'];
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -167,6 +167,11 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     setTimeout(() => setCopiedMessageId(null), 2000);
   };
 
+  const isInputDisabled = selectedModel === 'RAG n8n Agent' && uploadStatus !== 'success';
+  const inputPlaceholder = selectedModel === 'RAG n8n Agent'
+    ? (uploadStatus === 'success' ? "Ask RAG n8n Agent about the document..." : "Upload a PDF file first to chat with RAG n8n Agent...")
+    : `Ask ${selectedModel}...`;
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#131314] relative overflow-hidden">
       {/* Header */}
@@ -213,9 +218,8 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                     >
                       <span>{model}</span>
                       <span className="text-[11px] text-zinc-500 font-normal">
-                        {model === 'Gemini 1.5 Flash' && 'Fast and lightweight for everyday tasks'}
-                        {model === 'Gemini 1.5 Pro' && 'Complex reasoning and heavy-duty tasks'}
-                        {model === 'Gemini 2.0 Experimental' && 'Next generation preview with advanced capabilities'}
+                        {model === 'Gemma Model' && 'Normal local LLM for conversational guidance'}
+                        {model === 'RAG n8n Agent' && 'RAG-enabled agent routed via n8n workflows (Requires PDF)'}
                       </span>
                     </button>
                   ))}
@@ -437,15 +441,16 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={`Ask ${selectedModel}...`}
-              className="flex-1 bg-transparent border-0 outline-none text-[#e3e3e3] placeholder-zinc-500 text-sm sm:text-base py-2.5 px-2 resize-none max-h-48 scrollbar-thin overflow-y-auto leading-relaxed"
+              disabled={isInputDisabled}
+              placeholder={inputPlaceholder}
+              className={`flex-1 bg-transparent border-0 outline-none text-[#e3e3e3] placeholder-zinc-500 text-sm sm:text-base py-2.5 px-2 resize-none max-h-48 scrollbar-thin overflow-y-auto leading-relaxed ${isInputDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               style={{ height: 'auto' }}
             />
 
             {/* Send Button */}
             <button
               type="submit"
-              disabled={(!prompt.trim() && uploadStatus !== 'success') || (currentSession?.messages[currentSession.messages.length - 1]?.status === 'sending')}
+              disabled={isInputDisabled || (!prompt.trim() && uploadStatus !== 'success') || (currentSession?.messages[currentSession.messages.length - 1]?.status === 'sending')}
               className={`p-2.5 rounded-full transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer ${
                 prompt.trim() || uploadStatus === 'success'
                   ? 'bg-blue-600 hover:bg-blue-500 text-white' 

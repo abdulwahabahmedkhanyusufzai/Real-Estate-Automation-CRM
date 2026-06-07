@@ -10,7 +10,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState<GeminiModel>('Gemini 1.5 Flash');
+  const [selectedModel, setSelectedModel] = useState<GeminiModel>('Gemma Model');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
@@ -30,14 +30,21 @@ function App() {
       try {
         const parsed = JSON.parse(stored) as ChatSession[];
         // Convert timestamp strings back to Date objects
-        const hydrated = parsed.map(session => ({
-          ...session,
-          createdAt: new Date(session.createdAt),
-          messages: session.messages.map(m => ({
-            ...m,
-            timestamp: new Date(m.timestamp)
-          }))
-        }));
+        const hydrated = parsed.map(session => {
+          let model: GeminiModel = 'Gemma Model';
+          if (session.model === 'RAG n8n Agent') {
+            model = 'RAG n8n Agent';
+          }
+          return {
+            ...session,
+            model,
+            createdAt: new Date(session.createdAt),
+            messages: session.messages.map(m => ({
+              ...m,
+              timestamp: new Date(m.timestamp)
+            }))
+          };
+        });
         setSessions(hydrated);
         if (hydrated.length > 0) {
           setCurrentSessionId(hydrated[0].id);
@@ -50,7 +57,7 @@ function App() {
       const seedSession: ChatSession = {
         id: 'seed-1',
         title: 'Gem - Zoo Tour Guide',
-        model: 'Gemini 1.5 Flash',
+        model: 'Gemma Model',
         createdAt: new Date(),
         messages: [
           {
