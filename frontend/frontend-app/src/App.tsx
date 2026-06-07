@@ -219,7 +219,7 @@ function App() {
 
       let agentReply = "Sorry, I couldn't understand the format.";
 
-      if (attachment) {
+      if (selectedModel === 'RAG n8n Agent' || attachment) {
         // Chatting with the document using n8n chat-lead webhook
         const userEmail = localStorage.getItem('gemini_user_email') || 'abdulwahabyusufzai72@gmail.com';
         const response = await fetch('https://n8n.automationdev.app/webhook/chat-lead', {
@@ -239,6 +239,11 @@ function App() {
         agentReply = await pollN8nResponse(userEmail);
       } else {
         // Standard chat using local Ollama model
+        let promptText = content;
+        if (attachment) {
+          promptText = `${content}\n\n[Attached Document: ${attachment.name}]\n${attachment.text || '(No text extracted)'}`;
+        }
+
         const response = await fetch('/api/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -246,7 +251,7 @@ function App() {
             app_name: 'production_agent',
             user_id: userId,
             session_id: activeSessionId,
-            new_message: { role: 'user', parts: [{ text: content }] }
+            new_message: { role: 'user', parts: [{ text: promptText }] }
           })
         });
 
