@@ -167,10 +167,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     setTimeout(() => setCopiedMessageId(null), 2000);
   };
 
-  const isInputDisabled = selectedModel === 'RAG n8n Agent' && uploadStatus !== 'success';
-  const inputPlaceholder = selectedModel === 'RAG n8n Agent'
-    ? (uploadStatus === 'success' ? "Ask RAG n8n Agent about the document..." : "Upload a PDF file first to chat with RAG n8n Agent...")
-    : `Ask ${selectedModel}...`;
+  const inputPlaceholder = `Ask ${selectedModel}...`;
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#131314] relative overflow-hidden">
@@ -441,16 +438,15 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isInputDisabled}
               placeholder={inputPlaceholder}
-              className={`flex-1 bg-transparent border-0 outline-none text-[#e3e3e3] placeholder-zinc-500 text-sm sm:text-base py-2.5 px-2 resize-none max-h-48 scrollbar-thin overflow-y-auto leading-relaxed ${isInputDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className="flex-1 bg-transparent border-0 outline-none text-[#e3e3e3] placeholder-zinc-500 text-sm sm:text-base py-2.5 px-2 resize-none max-h-48 scrollbar-thin overflow-y-auto leading-relaxed"
               style={{ height: 'auto' }}
             />
 
             {/* Send Button */}
             <button
               type="submit"
-              disabled={isInputDisabled || (!prompt.trim() && uploadStatus !== 'success') || (currentSession?.messages[currentSession.messages.length - 1]?.status === 'sending')}
+              disabled={(!prompt.trim() && uploadStatus !== 'success') || (currentSession?.messages[currentSession.messages.length - 1]?.status === 'sending')}
               className={`p-2.5 rounded-full transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer ${
                 prompt.trim() || uploadStatus === 'success'
                   ? 'bg-blue-600 hover:bg-blue-500 text-white' 
