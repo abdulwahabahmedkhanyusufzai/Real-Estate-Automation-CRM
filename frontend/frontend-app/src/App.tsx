@@ -111,6 +111,19 @@ function App() {
     }
   };
 
+  const handleSetSelectedModel = (model: GeminiModel) => {
+    setSelectedModel(model);
+    if (currentSessionId) {
+      const updated = sessions.map(session => {
+        if (session.id === currentSessionId) {
+          return { ...session, model };
+        }
+        return session;
+      });
+      saveSessionsToStorage(updated);
+    }
+  };
+
   const handleSelectSession = (id: string) => {
     setCurrentSessionId(id);
     const session = sessions.find(s => s.id === id);
@@ -343,7 +356,7 @@ function App() {
         currentSession={currentSession}
         onSendMessage={handleSendMessage}
         selectedModel={selectedModel}
-        setSelectedModel={setSelectedModel}
+        setSelectedModel={handleSetSelectedModel}
         isSidebarOpen={sidebarOpen}
         setIsSidebarOpen={setSidebarOpen}
       />
