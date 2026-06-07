@@ -150,26 +150,6 @@ function App() {
     }
   };
 
-  const pollN8nResponse = async (email: string, attemptsLeft = 30): Promise<string> => {
-    if (attemptsLeft <= 0) {
-      throw new Error("Timeout waiting for response from n8n agent.");
-    }
-    
-    const response = await fetch(`/api/response-n8n?user_email=${encodeURIComponent(email)}`);
-    if (!response.ok) {
-      throw new Error("Failed to query response from server.");
-    }
-    
-    const data = await response.json();
-    if (data.status === 'success' && data.response) {
-      return data.response;
-    }
-    
-    // Wait 1.5 seconds and poll again
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    return pollN8nResponse(email, attemptsLeft - 1);
-  };
-
   const handleSendMessage = async (content: string, attachment?: { name: string; text?: string }) => {
     const userMessage: Message = {
       id: `m-usr-${Date.now()}`,
@@ -248,8 +228,29 @@ function App() {
           throw new Error(`Webhook chat-lead failed: ${response.statusText}`);
         }
 
-        // Wait for the asynchronous webhook callback to POST to our backend, then poll for the result
-        agentReply = await pollN8nResponse(userEmail);
+        try {
+          const data = await response.json();
+          if (data) {
+            if (typeof data === 'string') {
+              agentReply = data;
+            } else if (data.response) {
+              agentReply = data.response;
+            } else if (data.output) {
+              agentReply = data.output;
+            } else if (data.text) {
+              agentReply = data.text;
+            } else if (data.message) {
+              agentReply = data.message;
+            } else if (Array.isArray(data) && data[0]) {
+              const first = data[0];
+              agentReply = first.output || first.response || first.text || JSON.stringify(first);
+            } else {
+              agentReply = JSON.stringify(data);
+            }
+          }
+        } catch {
+          agentReply = await response.text();
+        }
       } else {
         // Standard chat using local Ollama model
         let promptText = content;
