@@ -219,7 +219,7 @@ function App() {
 
       let agentReply = "Sorry, I couldn't understand the format.";
 
-      if (selectedModel === 'RAG n8n Agent' || attachment) {
+      if (selectedModel === 'RAG n8n Agent') {
         // Chatting with the document using n8n chat-lead webhook
         const userEmail = localStorage.getItem('gemini_user_email') || 'abdulwahabyusufzai72@gmail.com';
         const response = await fetch('https://n8n.automationdev.app/webhook/chat-lead', {
