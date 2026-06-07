@@ -13,13 +13,17 @@ import {
   ThumbsDown,
   Share2,
   Check,
-  Menu
+  Menu,
+  Paperclip,
+  X,
+  Loader2,
+  FileText
 } from 'lucide-react';
 
 
 interface ChatAreaProps {
   currentSession: ChatSession | null;
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, attachment?: { name: string; text?: string }) => void;
   selectedModel: GeminiModel;
   setSelectedModel: (model: GeminiModel) => void;
   isSidebarOpen: boolean;
@@ -37,11 +41,81 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   const [prompt, setPrompt] = useState('');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [uploadedFileText, setUploadedFileText] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const models: GeminiModel[] = ['Gemini 1.5 Flash', 'Gemini 1.5 Pro', 'Gemini 2.0 Experimental'];
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      alert('Only PDF files are supported at this stage.');
+      return;
+    }
+
+    setUploadStatus('uploading');
+    setUploadedFileName(file.name);
+    setUploadedFileText(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('https://n8n.automationdev.app/webhook/file-upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      let textContent = '';
+      try {
+        const data = await response.json();
+        if (data) {
+          if (typeof data === 'string') {
+            textContent = data;
+          } else if (data.text) {
+            textContent = data.text;
+          } else if (data.content) {
+            textContent = data.content;
+          } else if (data.data) {
+            textContent = typeof data.data === 'string' ? data.data : JSON.stringify(data.data);
+          } else if (data.extractedText) {
+            textContent = data.extractedText;
+          } else {
+            textContent = JSON.stringify(data);
+          }
+        }
+      } catch {
+        textContent = await response.text();
+      }
+
+      setUploadedFileText(textContent);
+      setUploadStatus('success');
+    } catch (error) {
+      console.error('File upload error:', error);
+      setUploadStatus('error');
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setUploadStatus('idle');
+    setUploadedFileName(null);
+    setUploadedFileText(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     // Auto-scroll to bottom on new messages
@@ -58,14 +132,26 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!prompt.trim()) return;
+    if (!prompt.trim() && uploadStatus !== 'success') return;
     
     // Check if currently sending to avoid double submission
     const lastMsg = currentSession?.messages[currentSession.messages.length - 1];
     if (lastMsg && lastMsg.status === 'sending') return;
 
-    onSendMessage(prompt);
+    const attachment = uploadStatus === 'success' && uploadedFileName 
+      ? { name: uploadedFileName, text: uploadedFileText || '' } 
+      : undefined;
+
+    onSendMessage(prompt || `Analyze attached file: ${uploadedFileName}`, attachment);
     setPrompt('');
+
+    // Reset upload status
+    setUploadStatus('idle');
+    setUploadedFileName(null);
+    setUploadedFileText(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -271,11 +357,61 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       {/* Floating Bottom Input Bar */}
       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#131314] via-[#131314]/95 to-transparent pt-6 pb-4 px-4 sticky-footer z-15">
         <div className="max-w-3xl mx-auto flex flex-col gap-2">
+          {/* Hidden File Input for PDF */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept="application/pdf"
+            className="hidden"
+          />
+
+          {/* Upload Status Badge */}
+          {uploadStatus !== 'idle' && (
+            <div className="flex items-center justify-between bg-[#1e1f20] border border-[#2f3032] rounded-xl px-4 py-2 text-xs text-zinc-300 animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <div className="flex items-center gap-2">
+                {uploadStatus === 'uploading' && (
+                  <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                )}
+                {uploadStatus === 'success' && (
+                  <Check className="w-4 h-4 text-emerald-400" />
+                )}
+                {uploadStatus === 'error' && (
+                  <X className="w-4 h-4 text-rose-500" />
+                )}
+                <FileText className="w-4 h-4 text-zinc-400" />
+                <span className="font-medium truncate max-w-[200px] sm:max-w-xs">{uploadedFileName}</span>
+                {uploadStatus === 'uploading' && <span className="text-zinc-500">Uploading...</span>}
+                {uploadStatus === 'success' && <span className="text-emerald-400 font-semibold">Ready</span>}
+                {uploadStatus === 'error' && <span className="text-rose-400 font-semibold">Upload failed</span>}
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveFile}
+                className="p-1 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                title="Remove attachment"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* Input Box Container */}
           <form 
             onSubmit={handleSubmit}
             className="flex items-end gap-2 bg-[#1e1f20] border border-[#2f3032] hover:border-zinc-700 focus-within:border-zinc-600 rounded-3xl p-2.5 transition-all duration-200"
           >
+            {/* PDF Attachment Button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadStatus === 'uploading'}
+              className="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-full transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+              title="Upload PDF document"
+            >
+              <Paperclip className="w-5 h-5" />
+            </button>
+
             {/* Image Attachment (Mocked) */}
             <button
               type="button"
@@ -309,9 +445,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             {/* Send Button */}
             <button
               type="submit"
-              disabled={!prompt.trim() || (currentSession?.messages[currentSession.messages.length - 1]?.status === 'sending')}
+              disabled={(!prompt.trim() && uploadStatus !== 'success') || (currentSession?.messages[currentSession.messages.length - 1]?.status === 'sending')}
               className={`p-2.5 rounded-full transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer ${
-                prompt.trim() 
+                prompt.trim() || uploadStatus === 'success'
                   ? 'bg-blue-600 hover:bg-blue-500 text-white' 
                   : 'text-zinc-600 bg-zinc-800/50 cursor-not-allowed'
               }`}

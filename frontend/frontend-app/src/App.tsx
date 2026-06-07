@@ -130,11 +130,11 @@ function App() {
     }
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, attachment?: { name: string; text?: string }) => {
     const userMessage: Message = {
       id: `m-usr-${Date.now()}`,
       role: 'user',
-      content,
+      content: attachment ? `${content}\n\n📎 Attached PDF: ${attachment.name}` : content,
       timestamp: new Date(),
       status: 'complete'
     };
@@ -191,6 +191,11 @@ function App() {
       }
 
       // Execute prompt on production_agent
+      let promptText = content;
+      if (attachment) {
+        promptText = `${content}\n\n[Attached Document: ${attachment.name}]\n${attachment.text || '(No text extracted)'}`;
+      }
+
       const response = await fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -198,7 +203,7 @@ function App() {
           app_name: 'production_agent',
           user_id: userId,
           session_id: activeSessionId,
-          new_message: { role: 'user', parts: [{ text: content }] }
+          new_message: { role: 'user', parts: [{ text: promptText }] }
         })
       });
 
