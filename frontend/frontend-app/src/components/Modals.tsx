@@ -8,6 +8,16 @@ interface ModalProps {
 }
 
 export const SettingsModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
+  const [email, setEmail] = React.useState(() => {
+    return localStorage.getItem('gemini_user_email') || 'abdulwahabyusufzai72@gmail.com';
+  });
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEmail(val);
+    localStorage.setItem('gemini_user_email', val);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -36,6 +46,22 @@ export const SettingsModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
         {/* Content */}
         <div className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
+          {/* Section: User Profile */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">User Profile</h3>
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-zinc-300">User Email (for n8n Webhook)</label>
+              <input 
+                type="email" 
+                value={email}
+                onChange={handleEmailChange}
+                placeholder="email@example.com"
+                className="w-full bg-zinc-900 border border-zinc-850 hover:border-zinc-700 focus:border-zinc-650 rounded-xl px-3.5 py-2.5 text-sm text-zinc-200 outline-none transition-all"
+              />
+              <p className="text-[10px] text-zinc-500">This email is sent to n8n when chatting with an uploaded document.</p>
+            </div>
+          </div>
+
           {/* Section: General */}
           <div className="space-y-4">
             <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">General</h3>

@@ -190,33 +190,70 @@ function App() {
         });
       }
 
-      // Execute prompt on production_agent
-      let promptText = content;
-      if (attachment) {
-        promptText = `${content}\n\n[Attached Document: ${attachment.name}]\n${attachment.text || '(No text extracted)'}`;
-      }
-
-      const response = await fetch('/api/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          app_name: 'production_agent',
-          user_id: userId,
-          session_id: activeSessionId,
-          new_message: { role: 'user', parts: [{ text: promptText }] }
-        })
-      });
-
-      const data = await response.json();
-      
       let agentReply = "Sorry, I couldn't understand the format.";
-      if (Array.isArray(data)) {
-        const lastEvent = data[data.length - 1];
-        if (lastEvent.content && lastEvent.content.parts) {
-          agentReply = lastEvent.content.parts[0].text;
+
+      if (attachment) {
+        // Chatting with the document using n8n chat-lead webhook
+        const userEmail = localStorage.getItem('gemini_user_email') || 'abdulwahabyusufzai72@gmail.com';
+        const response = await fetch('https://n8n.automationdev.app/webhook/chat-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_email: userEmail,
+            message: content
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Webhook chat-lead failed: ${response.statusText}`);
         }
-      } else if (data.content && data.content.parts) {
-        agentReply = data.content.parts[0].text;
+
+        try {
+          const data = await response.json();
+          if (data) {
+            if (typeof data === 'string') {
+              agentReply = data;
+            } else if (data.response) {
+              agentReply = data.response;
+            } else if (data.output) {
+              agentReply = data.output;
+            } else if (data.text) {
+              agentReply = data.text;
+            } else if (data.message) {
+              agentReply = data.message;
+            } else if (Array.isArray(data) && data[0]) {
+              const first = data[0];
+              agentReply = first.output || first.response || first.text || JSON.stringify(first);
+            } else {
+              agentReply = JSON.stringify(data);
+            }
+          }
+        } catch {
+          agentReply = await response.text();
+        }
+      } else {
+        // Standard chat using local Ollama model
+        const response = await fetch('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            app_name: 'production_agent',
+            user_id: userId,
+            session_id: activeSessionId,
+            new_message: { role: 'user', parts: [{ text: content }] }
+          })
+        });
+
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          const lastEvent = data[data.length - 1];
+          if (lastEvent.content && lastEvent.content.parts) {
+            agentReply = lastEvent.content.parts[0].text;
+          }
+        } else if (data.content && data.content.parts) {
+          agentReply = data.content.parts[0].text;
+        }
       }
 
       setSessions(prevSessions => {
