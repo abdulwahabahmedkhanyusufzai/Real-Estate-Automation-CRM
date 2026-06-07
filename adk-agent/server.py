@@ -1,9 +1,8 @@
 # TODO: Complete this file
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from google.adk.cli.fast_api import get_fast_api_app
-from typing import Dict
 
 # Load environment variables
 load_dotenv()
