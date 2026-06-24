@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
+import { LeadInbox } from './components/LeadInbox';
 import { SettingsModal, HelpModal } from './components/Modals';
 import type { ChatSession, GeminiModel, Message } from './types';
 
@@ -13,6 +14,7 @@ function App() {
   const [selectedModel, setSelectedModel] = useState<GeminiModel>('Gemma Model');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [activeView, setActiveView] = useState<'chat' | 'leads'>('leads');
 
   // Generate / retrieve a stable user ID for session tracking
   const [userId] = useState(() => {
@@ -350,17 +352,27 @@ function App() {
         onNewChat={handleNewChat}
         openSettingsModal={() => setIsSettingsOpen(true)}
         openHelpModal={() => setIsHelpOpen(true)}
+        activeView={activeView}
+        setActiveView={setActiveView}
       />
 
-      {/* Main chat window */}
-      <ChatArea
-        currentSession={currentSession}
-        onSendMessage={handleSendMessage}
-        selectedModel={selectedModel}
-        setSelectedModel={handleSetSelectedModel}
-        isSidebarOpen={sidebarOpen}
-        setIsSidebarOpen={setSidebarOpen}
-      />
+      {/* Main panel - conditionally render Chat Area or Lead Inbox Dashboard */}
+      {activeView === 'chat' ? (
+        <ChatArea
+          currentSession={currentSession}
+          onSendMessage={handleSendMessage}
+          selectedModel={selectedModel}
+          setSelectedModel={handleSetSelectedModel}
+          isSidebarOpen={sidebarOpen}
+          setIsSidebarOpen={setSidebarOpen}
+        />
+      ) : (
+        <LeadInbox
+          isSidebarOpen={sidebarOpen}
+          setIsSidebarOpen={setSidebarOpen}
+          onToggleView={() => setActiveView('chat')}
+        />
+      )}
 
       {/* Modals */}
       <SettingsModal 

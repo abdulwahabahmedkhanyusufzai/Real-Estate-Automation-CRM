@@ -23,3 +23,27 @@ export interface Suggestion {
   prompt: string;
   category: 'code' | 'write' | 'explore' | 'analyze';
 }
+
+export interface Note {
+  id: string;
+  content: string;
+  createdAt: Date;
+  author: string;
+}
+
+export interface Lead {
+  id: string;
+  name: string;
+  budget: string;
+  area: string;
+  propertyType: string;
+  urgency: 'Low' | 'Medium' | 'High';
+  leadScore: number;
+  assignedBroker: string;
+  status: 'New' | 'In Progress' | 'Contacted' | 'Closed';
+  email: string;
+  phone: string;
+  createdAt: Date;
+  notes: Note[];
+}
+
