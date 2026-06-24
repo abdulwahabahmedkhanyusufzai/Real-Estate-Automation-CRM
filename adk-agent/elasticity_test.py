@@ -26,12 +26,12 @@ class ProductionAgentUser(HttpUser):
     def test_conversations(self):
         """Test conversational capabilities - high frequency."""
         topics = [
-            "What do red pandas typically eat in the wild?",
-            "Can you tell me an interesting fact about snow leopards?",
-            "Why are poison dart frogs so brightly colored?",
-            "Where can I find the new baby kangaroo in the zoo?",
-            "What is the name of your oldest gorilla?",
-            "What time is the penguin feeding today?"
+            "How do I qualify a WhatsApp lead with budget details?",
+            "Can you parse client requirements from a formal email?",
+            "What is the average transaction price for a villa in Dubai Hills?",
+            "How can I set up email IMAP authentication settings?",
+            "How do I assign a broker to an urgent property lead?",
+            "Can you extract pricing information from Property Finder inquiries?"
         ]
 
         # Use proper ADK API format for sending messages

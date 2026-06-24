@@ -15,10 +15,10 @@
     </style>
 </head>
 <body>
-    <h2>Gem - The Zoo Tour Guide 🦁</h2>
+    <h2>pixxi CRM AI 🏢</h2>
     <div id="chat-box"></div>
     <div class="input-area">
-        <input type="text" id="user-input" placeholder="Ask about an animal..." onkeypress="if(event.key === 'Enter') sendMessage()">
+        <input type="text" id="user-input" placeholder="Ask about leads or properties..." onkeypress="if(event.key === 'Enter') sendMessage()">
         <button onclick="sendMessage()">Send</button>
     </div>
 
@@ -34,7 +34,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ state: { user_type: "web_ui_user" } })
             });
-            appendMessage('agent', "Hi there! I'm Gem, your zoo tour guide! What animal would you like to learn about today? 🦒");
+            appendMessage('agent', "Hi there! I'm pixxi CRM AI, your real estate qualification assistant. How can I help you manage your Dubai property leads today? 🏢");
         }
 
         function appendMessage(role, text) {
