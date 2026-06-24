@@ -4,10 +4,10 @@ import { ChatArea } from './components/ChatArea';
 import { LeadInbox } from './components/LeadInbox';
 import { SettingsModal, HelpModal } from './components/Modals';
 import type { ChatSession, GeminiModel, Message } from './types';
-import { Menu } from 'lucide-react';
+import { Menu, Settings } from 'lucide-react';
 import IntegrationsManager from './components/IntegrationsManager';
 
-const LOCAL_STORAGE_KEY = 'gemini_clone_chats';
+const LOCAL_STORAGE_KEY = 'pixxi_crm_chats_v1';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -60,14 +60,14 @@ function App() {
       // Seed with an initial welcome chat session matching index.html setup
       const seedSession: ChatSession = {
         id: 'seed-1',
-        title: 'Gem - Zoo Tour Guide',
+        title: 'pixxi CRM AI Welcome',
         model: 'Gemma Model',
         createdAt: new Date(),
         messages: [
           {
             id: 'm-seed-model',
             role: 'model',
-            content: `Hi there! I'm Gem, your zoo tour guide! What animal would you like to learn about today? 🦒`,
+            content: `Welcome to pixxi CRM! I'm your AI lead qualification specialist. Paste a WhatsApp chat, input portal templates, or upload lead emails, and I will extract budgets, locations, bedrooms, and urgency for you instantly. How can I assist you with your real estate pipeline today? 🏢`,
             timestamp: new Date(),
             status: 'complete'
           }
@@ -342,7 +342,7 @@ function App() {
   const currentSession = sessions.find(s => s.id === currentSessionId) || null;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#131314] text-[#e3e3e3]">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#f8fafc] text-slate-800 font-sans">
       {/* Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -374,17 +374,31 @@ function App() {
           onToggleView={() => setActiveView('chat')}
         />
       ) : (
-        <div className="flex-1 overflow-y-auto bg-[#131314]">
-          <div className="flex items-center justify-between p-4 border-b border-[#2f3032] lg:hidden">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <span className="text-sm font-semibold text-white">Settings</span>
-            <div className="w-9" />
-          </div>
+        <div className="flex-1 flex flex-col h-full bg-[#f8fafc] text-slate-800 transition-colors duration-300 font-sans overflow-y-auto">
+          {/* Header */}
+          <header className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-200/80 sticky top-0 z-20 shadow-xs">
+            <div className="flex items-center gap-3">
+              {/* Mobile menu toggle */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="lg:hidden p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors duration-200 cursor-pointer"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              
+              <div className="flex flex-col text-left">
+                <h1 className="text-lg font-black tracking-tight flex items-center gap-2 select-none text-slate-900">
+                  <span className="p-1.5 bg-gradient-to-tr from-[#01cb65] to-[#00aed0] text-white rounded-lg flex items-center justify-center shadow-sm">
+                    <Settings className="w-4 h-4" />
+                  </span>
+                  <span className="font-extrabold text-slate-900">pixxi</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 ml-1">Settings</span>
+                </h1>
+                <span className="text-[9px] font-bold uppercase tracking-widest mt-1 text-slate-400">Integrations Control Panel</span>
+              </div>
+            </div>
+          </header>
+
           <IntegrationsManager />
         </div>
       )}

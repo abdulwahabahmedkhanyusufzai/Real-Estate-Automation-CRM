@@ -22,14 +22,14 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
     const boldParts = text.split(/(\*\*.*?\*\*)/g);
     return boldParts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
+        return <strong key={i} className="font-extrabold text-slate-950">{part.slice(2, -2)}</strong>;
       }
       return part;
     });
   };
 
   return (
-    <div className="space-y-3 text-sm sm:text-base text-[#e3e3e3] leading-relaxed">
+    <div className="space-y-3 text-sm sm:text-base text-slate-800 leading-relaxed text-left">
       {parts.map((part, index) => {
         // If it's a code block
         if (part.startsWith('```') && part.endsWith('```')) {
@@ -39,17 +39,17 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
           const code = lines.slice(1, -1).join('\n');
 
           return (
-            <div key={index} className="my-4 rounded-xl overflow-hidden border border-zinc-800 bg-[#1e1f20] shadow-md">
-              <div className="flex justify-between items-center px-4 py-2 bg-[#2c2d30] border-b border-zinc-800 text-xs font-mono text-zinc-400">
-                <span className="uppercase">{language}</span>
+            <div key={index} className="my-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shadow-xs">
+              <div className="flex justify-between items-center px-4 py-2 bg-slate-100 border-b border-slate-200 text-xs font-mono text-slate-500">
+                <span className="uppercase font-bold">{language}</span>
                 <button
                   onClick={() => copyToClipboard(code, index)}
-                  className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+                  className="flex items-center gap-1 hover:text-slate-800 transition-colors cursor-pointer"
                 >
                   {copiedIndex === index ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Copied!</span>
+                      <Check className="w-3.5 h-3.5 text-[#01cb65]" />
+                      <span className="text-[#01cb65] font-bold">Copied!</span>
                     </>
                   ) : (
                     <>
@@ -59,7 +59,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
                   )}
                 </button>
               </div>
-              <pre className="p-4 overflow-x-auto text-xs sm:text-sm font-mono text-zinc-100 bg-[#1e1f20] leading-normal">
+              <pre className="p-4 overflow-x-auto text-xs sm:text-sm font-mono text-slate-800 bg-slate-50 leading-normal">
                 <code>{code}</code>
               </pre>
             </div>
@@ -75,14 +75,14 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
 
               if (trimmed.startsWith('### ')) {
                 return (
-                  <h3 key={lineIdx} className="text-lg font-semibold text-white pt-4 pb-1">
+                  <h3 key={lineIdx} className="text-lg font-extrabold text-slate-950 pt-4 pb-1">
                     {renderTextWithBold(trimmed.slice(4))}
                   </h3>
                 );
               }
               if (trimmed.startsWith('#### ')) {
                 return (
-                  <h4 key={lineIdx} className="text-base font-medium text-white pt-2 pb-0.5">
+                  <h4 key={lineIdx} className="text-base font-bold text-slate-950 pt-2 pb-0.5">
                     {renderTextWithBold(trimmed.slice(5))}
                   </h4>
                 );
@@ -90,7 +90,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
               if (trimmed.startsWith('* ')) {
                 return (
                   <ul key={lineIdx} className="list-disc pl-6 py-0.5">
-                    <li className="text-zinc-300">
+                    <li className="text-slate-700">
                       {renderTextWithBold(trimmed.slice(2))}
                     </li>
                   </ul>
@@ -100,7 +100,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
                 const contentStr = trimmed.replace(/^\d+\.\s/, '');
                 return (
                   <ol key={lineIdx} className="list-decimal pl-6 py-0.5">
-                    <li className="text-zinc-300">
+                    <li className="text-slate-700">
                       {renderTextWithBold(contentStr)}
                     </li>
                   </ol>
@@ -108,7 +108,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
               }
               if (trimmed.startsWith('> ')) {
                 return (
-                  <blockquote key={lineIdx} className="border-l-4 border-blue-500 pl-4 py-1.5 italic my-2 bg-blue-500/5 rounded-r text-zinc-300">
+                  <blockquote key={lineIdx} className="border-l-4 border-[#01cb65] pl-4 py-1.5 italic my-2 bg-emerald-500/5 rounded-r text-slate-750 font-medium">
                     {renderTextWithBold(trimmed.slice(2))}
                   </blockquote>
                 );
@@ -119,7 +119,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
               }
 
               return (
-                <p key={lineIdx} className="text-zinc-300 my-0.5">
+                <p key={lineIdx} className="text-slate-700 my-0.5">
                   {renderTextWithBold(line)}
                 </p>
               );
