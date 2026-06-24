@@ -21,7 +21,6 @@ interface SidebarProps {
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
   onNewChat: () => void;
-  openSettingsModal: () => void;
   openHelpModal: () => void;
   activeView: 'chat' | 'leads' | 'settings';
   setActiveView: (view: 'chat' | 'leads' | 'settings') => void;
@@ -35,7 +34,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectSession,
   onDeleteSession,
   onNewChat,
-  openSettingsModal,
   openHelpModal,
   activeView,
   setActiveView

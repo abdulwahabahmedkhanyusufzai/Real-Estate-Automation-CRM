@@ -352,7 +352,6 @@ function App() {
         onSelectSession={handleSelectSession}
         onDeleteSession={handleDeleteSession}
         onNewChat={handleNewChat}
-        openSettingsModal={() => setIsSettingsOpen(true)}
         openHelpModal={() => setIsHelpOpen(true)}
         activeView={activeView}
         setActiveView={setActiveView}
