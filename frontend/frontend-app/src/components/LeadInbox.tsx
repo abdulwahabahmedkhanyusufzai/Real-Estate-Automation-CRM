@@ -2,9 +2,6 @@ import React, { useState, useMemo } from 'react';
 import type { Lead, Note } from '../types';
 import {
   Search,
-  Filter,
-  ArrowUpDown,
-  User,
   MapPin,
   DollarSign,
   Clock,
@@ -15,13 +12,11 @@ import {
   MessageSquare,
   Send,
   Calendar,
-  ChevronRight,
   Menu,
   Building2,
   Sparkles,
   Trash2,
   UserCheck,
-  CheckCircle,
   Briefcase,
   SlidersHorizontal,
   X
@@ -317,117 +312,132 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
       });
   }, [leads, searchQuery, statusFilter, urgencyFilter, brokerFilter, sortBy]);
 
-  // Priority color formatting
+  // Urgency tag styling matching Pixxi Functional Color Coding
   const getUrgencyBadge = (urgency: Lead['urgency']) => {
     switch (urgency) {
       case 'High':
-        return 'bg-red-500/10 text-red-400 border border-red-500/25';
+        return 'bg-rose-50 text-rose-700 border border-rose-100 ring-1 ring-rose-100/50';
       case 'Medium':
-        return 'bg-amber-500/10 text-amber-400 border border-amber-500/25';
+        return 'bg-amber-50 text-amber-700 border border-amber-100 ring-1 ring-amber-100/50';
       case 'Low':
-        return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25';
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-100 ring-1 ring-emerald-100/50';
       default:
-        return 'bg-zinc-800 text-zinc-400';
+        return 'bg-slate-150 text-slate-700';
     }
   };
 
   const getStatusBadge = (status: Lead['status']) => {
     switch (status) {
       case 'New':
-        return 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
+        return 'bg-blue-50 text-blue-600 border border-blue-100';
       case 'In Progress':
-        return 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
+        return 'bg-purple-50 text-purple-600 border border-purple-100';
       case 'Contacted':
-        return 'bg-orange-500/20 text-orange-300 border border-orange-500/30';
+        return 'bg-amber-50 text-amber-750 border border-amber-100';
       case 'Closed':
-        return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
       default:
-        return 'bg-zinc-800 text-zinc-400';
+        return 'bg-slate-100 text-slate-600';
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#131314] relative overflow-hidden select-none">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-[#2f3032] bg-[#131314]/90 backdrop-blur-md sticky top-0 z-20">
+    <div className="flex-1 flex flex-col h-full bg-[#f8fafc] text-slate-800 transition-colors duration-300 font-sans">
+      
+      {/* Pixxi Styled Header with logo and green gradient elements */}
+      <header className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-200/80 sticky top-0 z-20 shadow-xs">
         <div className="flex items-center gap-3">
           {/* Mobile menu toggle */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="lg:hidden p-2 hover:bg-zinc-800 rounded-full text-zinc-300 transition-colors"
+            className="lg:hidden p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors duration-200 cursor-pointer"
           >
             <Menu className="w-5 h-5" />
           </button>
           
-          <div className="flex flex-col">
-            <h1 className="text-xl font-bold text-white tracking-wide flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-blue-400" />
-              <span>Brokerage CRM</span>
+          <div className="flex flex-col text-left">
+            <h1 className="text-lg font-black tracking-tight flex items-center gap-2 select-none text-slate-900">
+              <span className="p-1.5 bg-gradient-to-tr from-[#01cb65] to-[#00aed0] text-white rounded-lg flex items-center justify-center shadow-sm">
+                <Briefcase className="w-4 h-4" />
+              </span>
+              <span className="font-extrabold text-slate-900">pixxi</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 ml-1">CRM</span>
             </h1>
-            <span className="text-[10px] text-zinc-500 uppercase font-semibold tracking-widest font-sans">Lead Management</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest mt-1 text-slate-400">Dubai Real Estate Dashboard</span>
           </div>
         </div>
 
-        {/* View Switcher Button */}
-        <div className="flex items-center gap-3">
+        {/* View Switcher and Action Controls */}
+        <div className="flex items-center gap-2.5">
           <button
             onClick={onToggleView}
-            className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/25 border border-blue-500/20 text-blue-400 hover:text-blue-300 rounded-xl transition-all text-xs font-semibold cursor-pointer shadow-lg shadow-blue-900/10"
+            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100/60 border border-emerald-200/40 text-emerald-700 rounded-xl transition-all duration-300 text-xs font-extrabold cursor-pointer hover:shadow-xs active:scale-95"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
             <span>Chat Agent</span>
           </button>
           
           <button
             onClick={handleCreateLead}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-all text-xs font-semibold cursor-pointer shadow-lg shadow-emerald-950/20"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#01cb65] to-[#00aed0] hover:opacity-92 active:scale-95 text-white rounded-xl transition-all duration-250 text-xs font-black cursor-pointer shadow-sm shadow-emerald-500/10 hover:shadow"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 font-bold" />
             <span className="hidden sm:inline">Add Lead</span>
           </button>
         </div>
       </header>
 
-      {/* CRM Stats Banner */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 md:p-6 border-b border-[#2f3032] bg-[#1a1b1c]/30">
-        <div className="bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4 flex flex-col justify-between hover:border-zinc-800 transition-all duration-200">
-          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Total Pipeline</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-xl md:text-2xl font-bold text-white">{stats.total}</span>
-            <span className="text-[10px] text-zinc-500">Leads</span>
+      {/* CRM Stats Banner with Pixxi Style Rounded Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-5 md:p-6 border-b bg-slate-100/40 border-slate-200/80">
+        
+        {/* Total Pipeline */}
+        <div className="relative group overflow-hidden bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/20 hover:-translate-y-0.5">
+          <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#01cb65] via-[#01c67d] to-[#00aed0] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-left text-slate-400 select-none">Total Pipeline</span>
+          <div className="flex items-baseline gap-1.5 mt-3">
+            <span className="text-2xl font-black tracking-tight text-slate-900">{stats.total}</span>
+            <span className="text-[9px] font-extrabold uppercase text-slate-400">Leads</span>
           </div>
         </div>
 
-        <div className="bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4 flex flex-col justify-between hover:border-zinc-800 transition-all duration-200">
-          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">New Enquiries</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-xl md:text-2xl font-bold text-blue-400">{stats.newLeads}</span>
-            <span className="text-[10px] text-zinc-500">Pending review</span>
+        {/* New Enquiries */}
+        <div className="relative group overflow-hidden bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/20 hover:-translate-y-0.5">
+          <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#01cb65] via-[#01c67d] to-[#00aed0] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-left text-slate-400 select-none">New Enquiries</span>
+          <div className="flex items-baseline gap-1.5 mt-3">
+            <span className="text-2xl font-black tracking-tight text-emerald-600">{stats.newLeads}</span>
+            <span className="text-[9px] font-extrabold uppercase text-slate-400">New</span>
           </div>
         </div>
 
-        <div className="bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4 flex flex-col justify-between hover:border-zinc-800 transition-all duration-200">
-          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Pipe Value (Est)</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-xl md:text-2xl font-bold text-emerald-400">{stats.pipelineValue}</span>
+        {/* Pipeline Value */}
+        <div className="relative group overflow-hidden bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/20 hover:-translate-y-0.5">
+          <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#01cb65] via-[#01c67d] to-[#00aed0] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-left text-slate-400 select-none">Pipe Value (Est)</span>
+          <div className="flex items-baseline gap-1.5 mt-3">
+            <span className="text-2xl font-black tracking-tight text-slate-900">{stats.pipelineValue}</span>
           </div>
         </div>
 
-        <div className="bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4 flex flex-col justify-between hover:border-zinc-800 transition-all duration-200">
-          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Avg Lead Score</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-xl md:text-2xl font-bold text-white flex items-center gap-1.5">
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
+        {/* Avg Lead Score */}
+        <div className="relative group overflow-hidden bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/20 hover:-translate-y-0.5">
+          <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#01cb65] via-[#01c67d] to-[#00aed0] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-left text-slate-400 select-none">Avg Lead Score</span>
+          <div className="flex items-baseline gap-1.5 mt-3">
+            <span className="text-2xl font-black tracking-tight flex items-center gap-1 text-[#01cb65]">
+              <TrendingUp className="w-5 h-5 text-[#01cb65]" />
               {stats.avgScore}%
             </span>
           </div>
         </div>
 
-        <div className="col-span-2 md:col-span-1 bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4 flex flex-col justify-between hover:border-zinc-800 transition-all duration-200">
-          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">High Urgency</span>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-xl md:text-2xl font-bold text-rose-400">{stats.highUrgency}</span>
-            <span className="text-[10px] text-zinc-500">Action needed</span>
+        {/* High Urgency */}
+        <div className="relative group overflow-hidden bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/20 hover:-translate-y-0.5 col-span-2 md:col-span-1">
+          <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#01cb65] via-[#01c67d] to-[#00aed0] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-left text-slate-400 select-none">High Urgency</span>
+          <div className="flex items-baseline gap-1.5 mt-3">
+            <span className="text-2xl font-black tracking-tight text-rose-600">{stats.highUrgency}</span>
+            <span className="text-[9px] font-extrabold uppercase text-slate-400">Action</span>
           </div>
         </div>
       </div>
@@ -436,43 +446,44 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         
         {/* Left Area: Leads List & Filters */}
-        <div className="w-full lg:w-[420px] border-r border-[#2f3032] flex flex-col h-full bg-[#18191a]/40 shrink-0">
+        <div className="w-full lg:w-[410px] border-r flex flex-col h-full bg-white border-slate-200/85 shrink-0">
           
           {/* Search and Sort Toolbar */}
-          <div className="p-4 border-b border-[#2f3032] space-y-3">
+          <div className="p-4 border-b border-slate-200/70 space-y-3">
             <div className="relative">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search leads, areas, brokers..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[#1e1f20] border border-[#2f3032] focus:border-zinc-700 rounded-xl text-sm outline-none text-zinc-150 placeholder-zinc-500 transition-all"
+                className="w-full pl-10 pr-9 py-2 border rounded-xl text-xs outline-none transition-all font-semibold bg-slate-50 border-slate-200 focus:border-slate-350 focus:ring-1 focus:ring-slate-100 text-slate-800 placeholder-slate-400"
               />
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Filter Pills / Selectors */}
+            {/* Filters select selectors */}
             <div className="flex gap-2 items-center text-xs">
-              <div className="flex items-center gap-1 text-zinc-400 font-medium">
-                <SlidersHorizontal className="w-3 h-3 text-zinc-500" />
-                <span>Filters:</span>
+              <div className="flex items-center gap-1 text-slate-450 font-extrabold shrink-0">
+                <SlidersHorizontal className="w-3 h-3 text-slate-400" />
+                <span className="text-[9px] uppercase tracking-wider select-none">Filters:</span>
               </div>
+              
               <div className="flex flex-wrap gap-1.5 flex-1 select-none">
                 {/* Status Filter */}
                 <select
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value)}
-                  className="bg-[#1e1f20] border border-[#2f3032] hover:border-zinc-700 text-zinc-300 py-1 px-2 rounded-lg text-[11px] font-semibold outline-none cursor-pointer"
+                  className="bg-slate-50 border border-slate-200 text-slate-700 py-1 px-2 rounded-lg text-[10px] font-extrabold outline-none cursor-pointer transition-colors hover:bg-slate-100"
                 >
-                  <option value="All">All Statuses</option>
+                  <option value="All">All Status</option>
                   {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
 
@@ -480,7 +491,7 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
                 <select
                   value={urgencyFilter}
                   onChange={e => setUrgencyFilter(e.target.value)}
-                  className="bg-[#1e1f20] border border-[#2f3032] hover:border-zinc-700 text-zinc-300 py-1 px-2 rounded-lg text-[11px] font-semibold outline-none cursor-pointer"
+                  className="bg-slate-50 border border-slate-200 text-slate-750 py-1 px-2 rounded-lg text-[10px] font-extrabold outline-none cursor-pointer transition-colors hover:bg-slate-100"
                 >
                   <option value="All">All Urgency</option>
                   <option value="High">High</option>
@@ -488,13 +499,23 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
                   <option value="Low">Low</option>
                 </select>
 
+                {/* Broker Filter */}
+                <select
+                  value={brokerFilter}
+                  onChange={e => setBrokerFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-slate-755 py-1 px-2 rounded-lg text-[10px] font-extrabold outline-none cursor-pointer transition-colors hover:bg-slate-100"
+                >
+                  <option value="All">All Brokers</option>
+                  {BROKERS.map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+
                 {/* Sorting options */}
                 <select
                   value={sortBy}
                   onChange={e => setSortBy(e.target.value as any)}
-                  className="bg-blue-600/10 border border-blue-500/20 text-blue-400 hover:text-blue-300 py-1 px-2 rounded-lg text-[11px] font-semibold ml-auto outline-none cursor-pointer"
+                  className="bg-emerald-50 border border-emerald-250 text-emerald-700 py-1 px-2 rounded-lg text-[10px] font-extrabold ml-auto outline-none cursor-pointer hover:bg-emerald-100/50 transition-colors"
                 >
-                  <option value="score">Sort: Lead Score</option>
+                  <option value="score">Sort: Score</option>
                   <option value="budget">Sort: Budget</option>
                   <option value="date">Sort: Newest</option>
                 </select>
@@ -502,10 +523,10 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
             </div>
           </div>
 
-          {/* Leads Scroll Area */}
-          <div className="flex-1 overflow-y-auto divide-y divide-[#2f3032]/60 scrollbar-thin">
+          {/* Leads Floating Cards Scroll Area */}
+          <div className="flex-1 overflow-y-auto py-3.5 divide-y-0 scrollbar-thin">
             {filteredAndSortedLeads.length === 0 ? (
-              <div className="p-8 text-center text-zinc-500 text-sm italic">
+              <div className="p-8 text-center text-slate-400 text-xs italic font-semibold">
                 No matching leads found
               </div>
             ) : (
@@ -515,58 +536,64 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
                   <div
                     key={lead.id}
                     onClick={() => setSelectedLeadId(lead.id)}
-                    className={`p-4 flex flex-col gap-2.5 transition-all duration-200 cursor-pointer text-left relative ${
+                    className={`mx-3.5 my-2.5 p-4 rounded-2xl flex flex-col gap-3 transition-all duration-300 cursor-pointer border text-left relative hover:-translate-y-0.5 hover:shadow-md ${
                       isSelected 
-                        ? 'bg-[#1e2330] border-l-4 border-blue-500' 
-                        : 'hover:bg-zinc-800/35 border-l-4 border-transparent'
+                        ? 'bg-emerald-50/20 border-emerald-500/40 shadow shadow-emerald-500/5 ring-1 ring-emerald-500/10'
+                        : 'bg-white border-slate-200/90 hover:bg-slate-50/50 hover:border-slate-350'
                     }`}
                   >
                     {/* Header: Name and Urgency */}
                     <div className="flex justify-between items-start">
-                      <h3 className="font-semibold text-zinc-100 text-[15px] truncate">{lead.name}</h3>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getUrgencyBadge(lead.urgency)}`}>
-                        {lead.urgency} Urgency
+                      <h3 className="font-extrabold text-[13.5px] truncate tracking-tight text-slate-800">{lead.name}</h3>
+                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-md ${getUrgencyBadge(lead.urgency)}`}>
+                        {lead.urgency}
                       </span>
                     </div>
 
                     {/* Meta: Budget and Score */}
                     <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1 text-zinc-300 font-semibold bg-zinc-800/60 py-0.5 px-2 rounded-md">
-                        <DollarSign className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{lead.budget}</span>
+                      <div className="flex items-center gap-1 font-extrabold py-0.5 px-2 rounded-md border bg-slate-55 border-slate-200/60 text-slate-850">
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="tracking-tight">{lead.budget}</span>
                       </div>
                       
                       {/* Score Indicator */}
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-zinc-400 text-[11px]">Score:</span>
-                        <span className={`font-bold text-sm ${lead.leadScore >= 90 ? 'text-emerald-400' : lead.leadScore >= 75 ? 'text-blue-400' : 'text-zinc-400'}`}>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-slate-400 font-bold">Intent Score:</span>
+                        <span className={`font-black text-xs px-1.5 py-0.25 rounded ${
+                          lead.leadScore >= 90 
+                            ? 'text-emerald-700 bg-emerald-50 border border-emerald-100/70' 
+                            : lead.leadScore >= 75 
+                              ? 'text-blue-750 bg-blue-50 border border-blue-100/70' 
+                              : 'text-slate-550 bg-slate-50 border border-slate-200/60'
+                        }`}>
                           {lead.leadScore}
                         </span>
                       </div>
                     </div>
 
                     {/* Area and Type */}
-                    <div className="flex gap-2 text-xs text-zinc-400 items-center">
+                    <div className="flex gap-2 text-[11px] items-center font-bold text-slate-500">
                       <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span className="truncate max-w-[120px]">{lead.area}</span>
                       </span>
-                      <span className="text-zinc-600">•</span>
+                      <span className="text-slate-300">•</span>
                       <span className="flex items-center gap-1">
-                        <Building2 className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span>{lead.propertyType}</span>
                       </span>
                     </div>
 
                     {/* Footer: Broker and Status */}
-                    <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-[#2f3032]/40 text-zinc-500 font-medium">
+                    <div className="flex justify-between items-center text-[10px] pt-2.5 border-t font-bold border-slate-100 text-slate-500">
                       <span className="flex items-center gap-1.5">
-                        <span className="w-4 h-4 bg-zinc-800 rounded-full flex items-center justify-center text-[9px] text-zinc-300 font-bold">
+                        <span className="w-4.5 h-4.5 rounded-full flex items-center justify-center text-[9px] font-black border bg-slate-50 text-slate-650 border-slate-200">
                           {lead.assignedBroker[0]}
                         </span>
-                        <span>Broker: <span className="text-zinc-300 font-semibold">{lead.assignedBroker}</span></span>
+                        <span>Broker: <span className="text-slate-800 font-extrabold">{lead.assignedBroker}</span></span>
                       </span>
-                      <span className={`px-2 py-0.5 rounded-md font-bold ${getStatusBadge(lead.status)}`}>
+                      <span className={`px-2 py-0.5 rounded font-black tracking-wide uppercase text-[9px] ${getStatusBadge(lead.status)}`}>
                         {lead.status}
                       </span>
                     </div>
@@ -579,132 +606,161 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
 
         {/* Right Area: Selected Lead Details Panel */}
         {selectedLead ? (
-          <div className="flex-1 flex flex-col h-full bg-[#131314] overflow-y-auto">
-            {/* Lead Details Banner */}
-            <div className="p-6 md:p-8 border-b border-[#2f3032] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#1a1b1c]/10">
-              <div className="flex items-center gap-4">
-                {/* Big Avatar */}
-                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-blue-900/10">
-                  {selectedLead.name.split(' ').map(n => n[0]).join('')}
+          <div className="flex-1 flex flex-col h-full bg-slate-50/30 overflow-y-auto">
+            {/* Lead Details Header with glowing gradient backdrop */}
+            <div className="p-6 md:p-8 border-b border-slate-200/80 bg-white/95 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-2xs">
+              <div className="flex items-center gap-5">
+                {/* Big Avatar with rotating glowing border */}
+                <div className="relative group shrink-0">
+                  <div className="absolute -inset-0.5 rounded-full blur-sm opacity-25 group-hover:opacity-45 transition duration-500 bg-gradient-to-tr from-[#01cb65] to-[#00aed0]"></div>
+                  <div className="relative w-15 h-15 rounded-full flex items-center justify-center text-lg font-black border bg-slate-50 text-slate-800 border-slate-200/90 shadow-inner">
+                    {selectedLead.name.split(' ').map(n => n[0]).join('')}
+                  </div>
                 </div>
                 
                 <div className="flex flex-col text-left">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-xl md:text-2xl font-bold text-white">{selectedLead.name}</h2>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getStatusBadge(selectedLead.status)}`}>
+                    <h2 className="text-xl md:text-2xl font-black tracking-tight text-slate-900">{selectedLead.name}</h2>
+                    <span className={`text-[9px] font-black tracking-wide uppercase px-2.5 py-0.5 rounded border ${getStatusBadge(selectedLead.status)}`}>
                       {selectedLead.status}
                     </span>
                   </div>
                   
-                  <span className="text-xs text-zinc-400 flex items-center gap-1.5 mt-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Captured on {selectedLead.createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  <span className="text-xs text-slate-400 font-bold flex items-center gap-1.5 mt-1.5 select-none">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                    Registered {selectedLead.createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               </div>
 
               {/* Action shortcuts */}
-              <div className="flex gap-2 w-full md:w-auto">
+              <div className="flex gap-2.5 w-full md:w-auto">
                 <a
                   href={`tel:${selectedLead.phone}`}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-semibold border border-zinc-700 transition-all cursor-pointer"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 cursor-pointer active:scale-95 bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:shadow-xs"
                 >
-                  <Phone className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Call Client</span>
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Call Representative</span>
                 </a>
                 <a
                   href={`mailto:${selectedLead.email}`}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-semibold border border-zinc-700 transition-all cursor-pointer"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 cursor-pointer active:scale-95 bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:shadow-xs"
                 >
-                  <Mail className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Email Client</span>
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Send Mail</span>
                 </a>
               </div>
             </div>
 
             {/* Core Info Cards */}
-            <div className="p-6 md:p-8 space-y-8">
+            <div className="p-6 md:p-8 space-y-8 max-w-5xl">
               
               {/* Properties Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4.5 text-left flex items-start gap-3">
-                  <DollarSign className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
+                
+                {/* Budget */}
+                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-350 hover:shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-500/20">
+                    <DollarSign className="w-5 h-5 shrink-0" />
+                  </div>
                   <div>
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Target Budget</span>
-                    <p className="text-lg font-bold text-white mt-0.5">{selectedLead.budget}</p>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">Target Budget</span>
+                    <p className="text-lg font-black mt-1 tracking-tight text-slate-900">{selectedLead.budget}</p>
                   </div>
                 </div>
 
-                <div className="bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4.5 text-left flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
+                {/* Area */}
+                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-350 hover:shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50/80 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-200/35">
+                    <MapPin className="w-5 h-5 shrink-0" />
+                  </div>
                   <div>
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Preferred Area</span>
-                    <p className="text-lg font-bold text-white mt-0.5">{selectedLead.area}</p>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">Preferred Area</span>
+                    <p className="text-lg font-black mt-1 tracking-tight text-slate-900">{selectedLead.area}</p>
                   </div>
                 </div>
 
-                <div className="bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4.5 text-left flex items-start gap-3">
-                  <Building2 className="w-5 h-5 text-purple-400 mt-0.5 shrink-0" />
+                {/* Property Type */}
+                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-350 hover:shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50/80 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-200/35">
+                    <Building2 className="w-5 h-5 shrink-0" />
+                  </div>
                   <div>
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Property Type</span>
-                    <p className="text-lg font-bold text-white mt-0.5">{selectedLead.propertyType}</p>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">Property Type</span>
+                    <p className="text-lg font-black mt-1 tracking-tight text-slate-900">{selectedLead.propertyType}</p>
                   </div>
                 </div>
 
-                <div className="bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4.5 text-left flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-yellow-400 mt-0.5 shrink-0 animate-pulse" />
-                  <div>
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">AI Lead Score</span>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-lg font-bold text-white">{selectedLead.leadScore}/100</p>
-                      <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md border border-emerald-500/10">High Intent</span>
+                {/* Lead score with glowing progress line */}
+                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-355 hover:shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50/80 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-200/35">
+                    <Sparkles className="w-5 h-5 shrink-0" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">AI Lead Score</span>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <p className="text-lg font-black tracking-tight text-slate-900">{selectedLead.leadScore}/100</p>
+                      <span className="text-[9px] font-extrabold text-[#01cb65] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">High Intent</span>
+                    </div>
+                    {/* Glowing progress line with Pixxi brand gradient */}
+                    <div className="w-full rounded-full h-1 mt-3 overflow-hidden border bg-slate-100 border-slate-200">
+                      <div 
+                        className="bg-gradient-to-r from-[#01cb65] to-[#00aed0] h-full rounded-full"
+                        style={{ width: `${selectedLead.leadScore}%` }}
+                      ></div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4.5 text-left flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-rose-400 mt-0.5 shrink-0" />
+                {/* Urgency */}
+                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-350 hover:shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50/80 flex items-center justify-center text-emerald-650 shrink-0 border border-emerald-200/35">
+                    <Clock className="w-5 h-5 shrink-0" />
+                  </div>
                   <div>
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Purchase Urgency</span>
-                    <p className="text-lg font-bold text-white mt-0.5 flex items-center gap-1.5">
-                      <span className={`w-2.5 h-2.5 rounded-full ${selectedLead.urgency === 'High' ? 'bg-red-500' : selectedLead.urgency === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
-                      {selectedLead.urgency}
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">Deal Urgency</span>
+                    <p className="text-lg font-black mt-1 tracking-tight flex items-center gap-2 text-slate-900">
+                      <span className={`w-2.5 h-2.5 rounded-full ${selectedLead.urgency === 'High' ? 'bg-rose-500 shadow-xs' : selectedLead.urgency === 'Medium' ? 'bg-amber-500 shadow-xs' : 'bg-emerald-500 shadow-xs'}`}></span>
+                      {selectedLead.urgency} Urgency
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-4.5 text-left flex items-start gap-3">
-                  <UserCheck className="w-5 h-5 text-indigo-400 mt-0.5 shrink-0" />
-                  <div>
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Contact Info</span>
-                    <p className="text-xs font-semibold text-zinc-200 mt-1 truncate">{selectedLead.email}</p>
-                    <p className="text-[11px] text-zinc-400 mt-0.5 font-mono">{selectedLead.phone}</p>
+                {/* Contact details */}
+                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-350 hover:shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50/80 flex items-center justify-center text-emerald-600 shrink-0 border border-[#bbf7d0]/30">
+                    <UserCheck className="w-5 h-5 shrink-0" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">Contact details</span>
+                    <p className="text-xs font-bold mt-1.5 truncate select-all text-slate-800">{selectedLead.email}</p>
+                    <p className="text-[11px] mt-0.5 font-mono tracking-tight select-all text-slate-500">{selectedLead.phone}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Action Controls Board */}
-              <div className="bg-[#1a1b1c]/30 border border-[#2f3032] rounded-2xl p-6 text-left">
-                <h3 className="text-sm font-bold text-zinc-200 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-zinc-500" />
-                  <span>Lead Pipeline Controls</span>
+              {/* Action Controls Board (Segmented layout) */}
+              <div className="border border-slate-200/90 rounded-2xl p-6 text-left bg-white shadow-xs">
+                <h3 className="text-xs font-bold text-slate-450 uppercase tracking-widest mb-5 flex items-center gap-2 select-none">
+                  <SlidersHorizontal className="w-4 h-4 text-slate-450" />
+                  <span>Pipeline & Broker Assignment</span>
                 </h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Status update selector */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold text-zinc-400">Pipeline Status</label>
-                    <div className="flex gap-2">
+                  {/* Status update selector (Premium Segmented Control in Pixxi style) */}
+                  <div className="flex flex-col gap-2.5">
+                    <label className="text-[10px] font-bold text-slate-450 uppercase tracking-widest select-none">Lead Pipeline Status</label>
+                    <div className="flex p-1 rounded-xl border w-full transition-all duration-300 bg-slate-50 border-slate-200">
                       {STATUSES.map(s => {
                         const isSelected = selectedLead.status === s;
                         return (
                           <button
                             key={s}
                             onClick={() => handleUpdateStatus(selectedLead.id, s as any)}
-                            className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all duration-350 cursor-pointer ${
                               isSelected 
-                                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/10'
-                                : 'bg-[#1e1f20] border-[#2f3032] hover:border-zinc-800 text-zinc-300'
+                                ? 'bg-gradient-to-r from-[#01cb65] to-[#00aed0] text-white shadow-xs'
+                                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
                             }`}
                           >
                             {s}
@@ -715,79 +771,85 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
                   </div>
 
                   {/* Broker re-assignment selection */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold text-zinc-400">Assign Broker</label>
-                    <select
-                      value={selectedLead.assignedBroker}
-                      onChange={e => handleUpdateBroker(selectedLead.id, e.target.value)}
-                      className="w-full bg-[#1e1f20] border border-[#2f3032] hover:border-zinc-700 py-2.5 px-4 rounded-xl text-xs font-bold outline-none text-zinc-200 cursor-pointer"
-                    >
-                      {BROKERS.map(b => (
-                        <option key={b} value={b}>Broker: {b}</option>
-                      ))}
-                    </select>
+                  <div className="flex flex-col gap-2.5">
+                    <label className="text-[10px] font-bold text-slate-450 uppercase tracking-widest select-none">Assigned Broker Agent</label>
+                    <div className="relative">
+                      <select
+                        value={selectedLead.assignedBroker}
+                        onChange={e => handleUpdateBroker(selectedLead.id, e.target.value)}
+                        className="w-full py-2.5 pl-4 pr-10 rounded-xl text-xs font-bold outline-none cursor-pointer appearance-none transition-all duration-200 border bg-slate-50 border-slate-200 text-slate-800 hover:border-slate-300"
+                      >
+                        {BROKERS.map(b => (
+                          <option key={b} value={b}>Broker Representative: {b}</option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-500">
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Notes and Activity Timeline Section */}
+              {/* Notes and Activity Timeline Section with sleek left border timeline design */}
               <div className="text-left space-y-4">
-                <h3 className="text-sm font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-blue-400" />
-                  <span>Broker Interactions & Notes ({selectedLead.notes.length})</span>
+                <h3 className="text-xs font-bold text-slate-450 uppercase tracking-widest flex items-center gap-2 select-none">
+                  <MessageSquare className="w-4 h-4 text-emerald-600" />
+                  <span>Interaction History & Broker Logs ({selectedLead.notes.length})</span>
                 </h3>
 
                 {/* Add Note Input Area */}
-                <div className="flex items-start gap-3 bg-[#1e1f20] border border-[#2f3032] rounded-2xl p-3 focus-within:border-zinc-600 transition-all">
+                <div className="flex items-start gap-3 border rounded-xl p-3 transition-all duration-200 shadow-inner bg-white border-slate-200/90 focus-within:border-slate-400">
                   <textarea
                     rows={2}
                     value={newNoteContent}
                     onChange={e => setNewNoteContent(e.target.value)}
-                    placeholder="Write a follow-up log or broker note here..."
-                    className="flex-1 bg-transparent border-0 outline-none text-zinc-200 placeholder-zinc-500 text-xs sm:text-sm py-1 resize-none font-medium leading-relaxed"
+                    placeholder="Log a client callback details or add critical brokerage notes..."
+                    className="flex-1 bg-transparent border-0 outline-none text-xs sm:text-sm py-1 resize-none font-semibold leading-relaxed text-slate-800 placeholder-slate-400"
                   />
                   <button
                     onClick={() => handleAddNote(selectedLead.id)}
                     disabled={!newNoteContent.trim()}
-                    className={`p-2.5 rounded-xl transition-all flex items-center justify-center shrink-0 cursor-pointer ${
+                    className={`p-2.5 rounded-lg transition-all duration-300 flex items-center justify-center shrink-0 cursor-pointer ${
                       newNoteContent.trim()
-                        ? 'bg-blue-600 hover:bg-blue-500 text-white' 
-                        : 'text-zinc-600 bg-zinc-800/40 cursor-not-allowed'
+                        ? 'bg-gradient-to-r from-[#01cb65] to-[#00aed0] text-white shadow' 
+                        : 'text-slate-350 bg-slate-100 cursor-not-allowed border border-transparent'
                     }`}
-                    title="Save note"
                   >
                     <Send className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                {/* Notes List */}
-                <div className="space-y-3.5 mt-4">
+                {/* Notes List with visual timeline connector */}
+                <div className="space-y-4.5 relative pl-4 border-l ml-3.5 mt-6 pb-2 transition-colors duration-300 border-slate-200">
                   {selectedLead.notes.map((note) => (
                     <div 
                       key={note.id}
-                      className="bg-[#1a1b1c]/55 border border-[#2f3032]/60 rounded-xl p-4 flex flex-col gap-2 hover:border-zinc-800 transition-all"
+                      className="group relative border rounded-xl p-4.5 flex flex-col gap-2.5 transition-all duration-300 hover:shadow bg-white border-slate-200/70 hover:border-slate-355"
                     >
-                      <div className="flex justify-between items-center text-[10px] font-semibold text-zinc-500">
-                        <span className="flex items-center gap-1">
-                          <span className="w-4 h-4 bg-zinc-800 rounded-full flex items-center justify-center text-[8px] text-zinc-400 font-bold">
+                      {/* Timeline dot */}
+                      <div className="absolute -left-[21.5px] top-[23px] w-2 h-2 rounded-full bg-emerald-600 border border-white ring-4 ring-emerald-500/10 group-hover:scale-125 transition-transform duration-300"></div>
+
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 select-none">
+                        <span className="flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black border bg-slate-50 text-slate-650 border-slate-200">
                             {note.author[0]}
                           </span>
-                          <span>Logged by <span className="text-zinc-300 font-bold">{note.author}</span></span>
+                          <span>Logged by <span className="text-slate-700 font-extrabold">{note.author}</span></span>
                         </span>
                         
                         <div className="flex items-center gap-3">
-                          <span>{note.createdAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} • {note.createdAt.toLocaleDateString()}</span>
+                          <span className="font-semibold text-slate-550">{note.createdAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} • {note.createdAt.toLocaleDateString()}</span>
                           <button
                             onClick={() => handleDeleteNote(selectedLead.id, note.id)}
-                            className="text-zinc-600 hover:text-rose-400 transition-colors p-0.5 rounded-md hover:bg-zinc-800"
-                            title="Delete log entry"
+                            className="transition-colors p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-slate-50"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
 
-                      <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-medium">
+                      <p className="text-xs sm:text-sm leading-relaxed font-semibold text-slate-700">
                         {note.content}
                       </p>
                     </div>
@@ -798,7 +860,7 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-zinc-500 italic p-8">
+          <div className="flex-1 flex flex-col items-center justify-center font-bold text-xs tracking-wide italic p-8 transition-colors duration-300 bg-slate-50/50 text-slate-450">
             Select a lead from the sidebar to inspect parameters
           </div>
         )}

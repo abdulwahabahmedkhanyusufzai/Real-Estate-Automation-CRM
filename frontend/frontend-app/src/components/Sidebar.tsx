@@ -183,7 +183,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )
         )}
-      </div>
 
         {/* Collapsed view clock icon placeholder */}
         {!isOpen && (
