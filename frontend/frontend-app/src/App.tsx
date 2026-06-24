@@ -4,6 +4,8 @@ import { ChatArea } from './components/ChatArea';
 import { LeadInbox } from './components/LeadInbox';
 import { SettingsModal, HelpModal } from './components/Modals';
 import type { ChatSession, GeminiModel, Message } from './types';
+import { Menu } from 'lucide-react';
+import IntegrationsManager from './components/IntegrationsManager';
 
 const LOCAL_STORAGE_KEY = 'gemini_clone_chats';
 
@@ -14,7 +16,7 @@ function App() {
   const [selectedModel, setSelectedModel] = useState<GeminiModel>('Gemma Model');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [activeView, setActiveView] = useState<'chat' | 'leads'>('leads');
+  const [activeView, setActiveView] = useState<'chat' | 'leads' | 'settings'>('leads');
 
   // Generate / retrieve a stable user ID for session tracking
   const [userId] = useState(() => {
@@ -356,7 +358,7 @@ function App() {
         setActiveView={setActiveView}
       />
 
-      {/* Main panel - conditionally render Chat Area or Lead Inbox Dashboard */}
+      {/* Main panel - conditionally render Chat Area, Lead Inbox, or Integrations Settings Page */}
       {activeView === 'chat' ? (
         <ChatArea
           currentSession={currentSession}
@@ -366,12 +368,26 @@ function App() {
           isSidebarOpen={sidebarOpen}
           setIsSidebarOpen={setSidebarOpen}
         />
-      ) : (
+      ) : activeView === 'leads' ? (
         <LeadInbox
           isSidebarOpen={sidebarOpen}
           setIsSidebarOpen={setSidebarOpen}
           onToggleView={() => setActiveView('chat')}
         />
+      ) : (
+        <div className="flex-1 overflow-y-auto bg-[#131314]">
+          <div className="flex items-center justify-between p-4 border-b border-[#2f3032] lg:hidden">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <span className="text-sm font-semibold text-white">Settings</span>
+            <div className="w-9" />
+          </div>
+          <IntegrationsManager />
+        </div>
       )}
 
       {/* Modals */}

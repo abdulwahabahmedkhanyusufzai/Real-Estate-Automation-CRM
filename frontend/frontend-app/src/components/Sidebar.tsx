@@ -23,8 +23,8 @@ interface SidebarProps {
   onNewChat: () => void;
   openSettingsModal: () => void;
   openHelpModal: () => void;
-  activeView: 'chat' | 'leads';
-  setActiveView: (view: 'chat' | 'leads') => void;
+  activeView: 'chat' | 'leads' | 'settings';
+  setActiveView: (view: 'chat' | 'leads' | 'settings') => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -211,9 +211,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         <button 
-          onClick={openSettingsModal}
-          className={`flex items-center gap-3 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-full transition-all duration-200 cursor-pointer ${
+          onClick={() => setActiveView('settings')}
+          className={`flex items-center gap-3 transition-all duration-200 cursor-pointer ${
             isOpen ? 'px-4 py-3 w-full justify-start' : 'p-3 w-12 h-12 justify-center mx-auto'
+          } ${
+            activeView === 'settings' 
+              ? 'bg-blue-600/15 text-blue-400 border border-blue-500/25 font-semibold' 
+              : 'hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent'
           }`}
           title="Settings"
         >

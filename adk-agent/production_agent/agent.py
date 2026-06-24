@@ -1,4 +1,4 @@
-# TODO: Complete this file
+# Copyright 2026 Google LLC
 import os
 from pathlib import Path
 
