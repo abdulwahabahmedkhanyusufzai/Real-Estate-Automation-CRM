@@ -7,17 +7,12 @@ import {
   Shield, 
   Key, 
   RefreshCw, 
-  FileText, 
   AlertCircle, 
   Eye, 
   EyeOff, 
   Link, 
   Cpu, 
-  CheckCircle,
-  Database,
-  ArrowRight,
   Terminal,
-  Settings,
   Trash2
 } from 'lucide-react';
 
