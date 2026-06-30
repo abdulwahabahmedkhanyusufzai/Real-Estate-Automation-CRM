@@ -3,6 +3,7 @@ import random
 import uuid
 from locust import HttpUser, task, between
 
+
 class ProductionAgentUser(HttpUser):
     """Elasticity test user for the Production ADK Agent."""
 
@@ -31,7 +32,7 @@ class ProductionAgentUser(HttpUser):
             "What is the average transaction price for a villa in Dubai Hills?",
             "How can I set up email IMAP authentication settings?",
             "How do I assign a broker to an urgent property lead?",
-            "Can you extract pricing information from Property Finder inquiries?"
+            "Can you extract pricing information from Property Finder inquiries?",
         ]
 
         # Use proper ADK API format for sending messages
@@ -39,12 +40,7 @@ class ProductionAgentUser(HttpUser):
             "app_name": "production_agent",
             "user_id": self.user_id,
             "session_id": self.session_id,
-            "new_message": {
-                "role": "user",
-                "parts": [{
-                    "text": random.choice(topics)
-                }]
-            }
+            "new_message": {"role": "user", "parts": [{"text": random.choice(topics)}]},
         }
 
         self.client.post(

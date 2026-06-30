@@ -27,10 +27,10 @@ api_base = os.getenv("OLLAMA_API_BASE", "localhost:10010")  # Location of Ollama
 
 # Production Gemma Agent - GPU-accelerated conversational assistant
 production_agent = Agent(
-   model=LiteLlm(model=f"ollama_chat/{gemma_model_name}", api_base=api_base),
-   name="production_agent",
-   description="A production-ready conversational assistant powered by GPU-accelerated Gemma.",
-   instruction="""You are a helpful, capable, and honest AI assistant powered by Google's Gemma model.
+    model=LiteLlm(model=f"ollama_chat/{gemma_model_name}", api_base=api_base),
+    name="production_agent",
+    description="A production-ready conversational assistant powered by GPU-accelerated Gemma.",
+    instruction="""You are a helpful, capable, and honest AI assistant powered by Google's Gemma model.
    Your goal is to provide accurate, clear, and objective answers to the user's queries across a wide range of topics, including coding, writing, analysis, and general knowledge.
 
    Guidelines:
@@ -38,7 +38,7 @@ production_agent = Agent(
    - If you do not know the answer or lack access to real-time information, state so clearly without making up facts.
    - Format technical explanations or code clearly using standard markdown.
    - Maintain a neutral, professional, and helpful tone.""",
-   tools=[],  # Gemma focuses on conversational capabilities
+    tools=[],  # Gemma focuses on conversational capabilities
 )
 # Set as root agent
 root_agent = production_agent
