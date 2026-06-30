@@ -3,7 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 import { LeadInbox } from './components/LeadInbox';
 import { SettingsModal, HelpModal } from './components/Modals';
-import type { ChatSession, GeminiModel, Message } from './types';
+import type { ChatSession, GeminiModel, Message, Lead } from './types';
 import { Menu, Settings } from 'lucide-react';
 import IntegrationsManager from './components/IntegrationsManager';
 
@@ -339,6 +339,25 @@ function App() {
     }
   };
 
+  const handleQualifyLead = (lead: Lead) => {
+    setActiveView('chat');
+    const promptMessage = `Help me analyze and qualify this real estate lead:
+- Client Name: ${lead.name}
+- Email: ${lead.email}
+- Phone: ${lead.phone}
+- Budget: ${lead.budget}
+- Preferred Area: ${lead.area}
+- Property Type: ${lead.propertyType}
+- Urgency: ${lead.urgency}
+- AI Intent Score: ${lead.leadScore}
+
+Can you give me a summary profile and recommend next steps for this client?`;
+
+    // Start a new chat session for this lead
+    setCurrentSessionId(null);
+    handleSendMessage(promptMessage);
+  };
+
   const currentSession = sessions.find(s => s.id === currentSessionId) || null;
 
   return (
@@ -372,9 +391,10 @@ function App() {
           isSidebarOpen={sidebarOpen}
           setIsSidebarOpen={setSidebarOpen}
           onToggleView={() => setActiveView('chat')}
+          onQualifyLead={handleQualifyLead}
         />
       ) : (
-        <div className="flex-1 flex flex-col h-full bg-[#f8fafc] text-slate-800 transition-colors duration-300 font-sans overflow-y-auto">
+        <div className="flex-1 flex flex-col h-full bg-[#f8fafc] text-slate-800 transition-colors duration-300 font-sans overflow-y-auto animate-fade-in-up">
           {/* Header */}
           <header className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-200/80 sticky top-0 z-20 shadow-xs">
             <div className="flex items-center gap-3">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, HelpCircle, ExternalLink, Sun, ToggleRight } from 'lucide-react';
+import { X, HelpCircle, ExternalLink, Sun, ToggleRight, ChevronDown } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,6 +10,8 @@ export const SettingsModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const [email, setEmail] = React.useState(() => {
     return localStorage.getItem('gemini_user_email') || 'abdulwahabyusufzai72@gmail.com';
   });
+  const [delay, setDelay] = React.useState('2000');
+  const [isDelayDropdownOpen, setIsDelayDropdownOpen] = React.useState(false);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -28,7 +30,7 @@ export const SettingsModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-200 text-slate-800">
+      <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl z-10 animate-scale-in text-slate-800">
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -88,13 +90,45 @@ export const SettingsModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           {/* Section: AI Configuration */}
           <div className="space-y-4">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">AI Configuration</h3>
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <label className="block text-xs font-semibold text-slate-600 pl-1">Mock LLM Response Delay (ms)</label>
-              <select className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#01cb65]">
-                <option value="1000">1.0 seconds (Fast)</option>
-                <option value="2000">2.0 seconds (Realistic)</option>
-                <option value="3000">3.0 seconds (Heavy Thinking)</option>
-              </select>
+              <button
+                onClick={() => setIsDelayDropdownOpen(!isDelayDropdownOpen)}
+                className="w-full flex items-center justify-between bg-white border border-slate-200 hover:border-slate-350 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-all cursor-pointer text-left shadow-xs"
+              >
+                <span>
+                  {delay === '1000' && '1.0 seconds (Fast)'}
+                  {delay === '2000' && '2.0 seconds (Realistic)'}
+                  {delay === '3000' && '3.0 seconds (Heavy Thinking)'}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-slate-450 transition-transform duration-200 ${isDelayDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {isDelayDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsDelayDropdownOpen(false)} />
+                  <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 py-1.5 animate-in fade-in slide-in-from-top-1 duration-150 text-left">
+                    {[
+                      { value: '1000', label: '1.0 seconds (Fast)' },
+                      { value: '2000', label: '2.0 seconds (Realistic)' },
+                      { value: '3000', label: '3.0 seconds (Heavy Thinking)' }
+                    ].map(item => (
+                      <button
+                        key={item.value}
+                        onClick={() => {
+                          setDelay(item.value);
+                          setIsDelayDropdownOpen(false);
+                        }}
+                        className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors cursor-pointer ${
+                          delay === item.value ? 'bg-emerald-50 text-emerald-700 font-extrabold' : 'hover:bg-slate-50 text-slate-650'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-slate-600 pl-1">Default Temperature</label>
@@ -149,7 +183,7 @@ export const HelpModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-200 text-slate-800">
+      <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl z-10 animate-scale-in text-slate-800">
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">

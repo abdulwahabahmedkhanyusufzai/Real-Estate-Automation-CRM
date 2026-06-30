@@ -19,13 +19,15 @@ import {
   UserCheck,
   Briefcase,
   SlidersHorizontal,
-  X
+  X,
+  ChevronDown
 } from 'lucide-react';
 
 interface LeadInboxProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
   onToggleView: () => void;
+  onQualifyLead?: (lead: Lead) => void;
 }
 
 const INITIAL_LEADS: Lead[] = [
@@ -147,22 +149,31 @@ const STATUSES = ['New', 'In Progress', 'Contacted', 'Closed'];
 export const LeadInbox: React.FC<LeadInboxProps> = ({
   isSidebarOpen,
   setIsSidebarOpen,
-  onToggleView
+  onToggleView,
+  onQualifyLead
 }) => {
   const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
-  const [selectedLeadId, setSelectedLeadId] = useState<string>('lead-1');
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [urgencyFilter, setUrgencyFilter] = useState<string>('All');
   const [brokerFilter, setBrokerFilter] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'score' | 'budget' | 'date'>('score');
   
+  // Custom dropdowns state
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [isUrgencyDropdownOpen, setIsUrgencyDropdownOpen] = useState(false);
+  const [isBrokerDropdownOpen, setIsBrokerDropdownOpen] = useState(false);
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const [isDrawerBrokerDropdownOpen, setIsDrawerBrokerDropdownOpen] = useState(false);
+
   // Note input state
   const [newNoteContent, setNewNoteContent] = useState('');
 
   // Selected Lead Object
   const selectedLead = useMemo(() => {
-    return leads.find(l => l.id === selectedLeadId) || leads[0];
+    if (!selectedLeadId) return null;
+    return leads.find(l => l.id === selectedLeadId) || null;
   }, [leads, selectedLeadId]);
 
   // Handle properties changes
@@ -312,37 +323,67 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
       });
   }, [leads, searchQuery, statusFilter, urgencyFilter, brokerFilter, sortBy]);
 
-  // Urgency tag styling matching Pixxi Functional Color Coding
-  const getUrgencyBadge = (urgency: Lead['urgency']) => {
-    switch (urgency) {
-      case 'High':
-        return 'bg-rose-50 text-rose-700 border border-rose-100 ring-1 ring-rose-100/50';
-      case 'Medium':
-        return 'bg-amber-50 text-amber-700 border border-amber-100 ring-1 ring-amber-100/50';
-      case 'Low':
-        return 'bg-emerald-50 text-emerald-700 border border-emerald-100 ring-1 ring-emerald-100/50';
-      default:
-        return 'bg-slate-150 text-slate-700';
-    }
+  // Generate avatar gradient based on lead name
+  const getAvatarGradient = (name: string) => {
+    const charCode = name.charCodeAt(0) + (name.charCodeAt(name.length - 1) || 0);
+    const grads = [
+      'from-emerald-400 to-teal-500 text-white',
+      'from-blue-400 to-indigo-500 text-white',
+      'from-violet-400 to-purple-500 text-white',
+      'from-amber-400 to-orange-500 text-white',
+      'from-rose-450 to-pink-500 text-white'
+    ];
+    return grads[charCode % grads.length];
   };
 
-  const getStatusBadge = (status: Lead['status']) => {
-    switch (status) {
-      case 'New':
-        return 'bg-blue-50 text-blue-600 border border-blue-100';
-      case 'In Progress':
-        return 'bg-purple-50 text-purple-600 border border-purple-100';
-      case 'Contacted':
-        return 'bg-amber-50 text-amber-750 border border-amber-100';
-      case 'Closed':
-        return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
-      default:
-        return 'bg-slate-100 text-slate-600';
-    }
+  // Render Status Badge with dot indicator
+  const renderStatusBadge = (status: Lead['status']) => {
+    const dotColor = {
+      'New': 'bg-blue-500',
+      'In Progress': 'bg-purple-500',
+      'Contacted': 'bg-amber-500',
+      'Closed': 'bg-emerald-500'
+    }[status] || 'bg-slate-400';
+
+    const classes = {
+      'New': 'bg-blue-50 text-blue-700 border border-blue-150',
+      'In Progress': 'bg-purple-50 text-purple-700 border border-purple-150',
+      'Contacted': 'bg-amber-50 text-amber-800 border border-amber-200',
+      'Closed': 'bg-emerald-50 text-emerald-700 border border-emerald-150'
+    }[status] || 'bg-slate-50 text-slate-600 border border-slate-150';
+
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${classes}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+        <span>{status}</span>
+      </span>
+    );
+  };
+
+  // Render Urgency Badge with dot indicator
+  const renderUrgencyBadge = (urgency: Lead['urgency']) => {
+    const dotColor = {
+      'High': 'bg-rose-500 animate-pulse',
+      'Medium': 'bg-amber-500',
+      'Low': 'bg-emerald-500'
+    }[urgency];
+
+    const classes = {
+      'High': 'bg-rose-50 text-rose-700 border border-rose-150',
+      'Medium': 'bg-amber-50 text-amber-700 border border-amber-200',
+      'Low': 'bg-emerald-50 text-emerald-750 border border-emerald-150'
+    }[urgency];
+
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${classes}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+        <span>{urgency}</span>
+      </span>
+    );
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#f8fafc] text-slate-800 transition-colors duration-300 font-sans">
+    <div className="flex-1 flex flex-col h-full bg-[#f8fafc] text-slate-800 transition-colors duration-300 font-sans overflow-hidden">
       
       {/* Pixxi Styled Header with logo and green gradient elements */}
       <header className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-200/80 sticky top-0 z-20 shadow-xs">
@@ -371,7 +412,7 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
         <div className="flex items-center gap-2.5">
           <button
             onClick={onToggleView}
-            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100/60 border border-emerald-200/40 text-emerald-700 rounded-xl transition-all duration-300 text-xs font-extrabold cursor-pointer hover:shadow-xs active:scale-95"
+            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100/60 border border-emerald-200/40 text-emerald-700 rounded-xl transition-all duration-300 text-xs font-extrabold cursor-pointer hover:shadow-xs active:scale-95 animate-pulse-subtle"
           >
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
             <span>Chat Agent</span>
@@ -382,438 +423,742 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
             className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#01cb65] to-[#00aed0] hover:opacity-92 active:scale-95 text-white rounded-xl transition-all duration-250 text-xs font-black cursor-pointer shadow-sm shadow-emerald-500/10 hover:shadow"
           >
             <Plus className="w-3.5 h-3.5 font-bold" />
-            <span className="hidden sm:inline">Add Lead</span>
+            <span>Add Lead</span>
           </button>
         </div>
       </header>
 
-      {/* CRM Stats Banner with Pixxi Style Rounded Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-5 md:p-6 border-b bg-slate-100/40 border-slate-200/80">
+      {/* CRM Stats Banner with Custom Left Border & Diagnostic Icons */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-5 md:p-6 border-b bg-slate-100/40 border-slate-200/80 shrink-0 animate-fade-in-up">
         
         {/* Total Pipeline */}
-        <div className="relative group overflow-hidden bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/20 hover:-translate-y-0.5">
-          <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#01cb65] via-[#01c67d] to-[#00aed0] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-left text-slate-400 select-none">Total Pipeline</span>
-          <div className="flex items-baseline gap-1.5 mt-3">
-            <span className="text-2xl font-black tracking-tight text-slate-900">{stats.total}</span>
-            <span className="text-[9px] font-extrabold uppercase text-slate-400">Leads</span>
+        <div className="bg-white border-l-4 border-l-[#01cb65] border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group">
+          <div className="text-left">
+            <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400 select-none">Total Pipeline</span>
+            <div className="flex items-baseline gap-1.5 mt-1.5">
+              <span className="text-xl font-black tracking-tight text-slate-900">{stats.total}</span>
+              <span className="text-[9px] font-extrabold uppercase text-slate-400">Leads</span>
+            </div>
+          </div>
+          <div className="p-2.5 bg-emerald-50 text-[#01cb65] rounded-xl border border-emerald-100/50 group-hover:scale-110 transition-transform duration-300">
+            <Briefcase className="w-4.5 h-4.5" />
           </div>
         </div>
 
         {/* New Enquiries */}
-        <div className="relative group overflow-hidden bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/20 hover:-translate-y-0.5">
-          <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#01cb65] via-[#01c67d] to-[#00aed0] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-left text-slate-400 select-none">New Enquiries</span>
-          <div className="flex items-baseline gap-1.5 mt-3">
-            <span className="text-2xl font-black tracking-tight text-emerald-600">{stats.newLeads}</span>
-            <span className="text-[9px] font-extrabold uppercase text-slate-400">New</span>
+        <div className="bg-white border-l-4 border-l-blue-500 border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group">
+          <div className="text-left">
+            <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400 select-none">New Enquiries</span>
+            <div className="flex items-baseline gap-1.5 mt-1.5">
+              <span className="text-xl font-black tracking-tight text-blue-600">{stats.newLeads}</span>
+              <span className="text-[9px] font-extrabold uppercase text-slate-400">New</span>
+            </div>
+          </div>
+          <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl border border-blue-100/50 group-hover:scale-110 transition-transform duration-300">
+            <Calendar className="w-4.5 h-4.5" />
           </div>
         </div>
 
         {/* Pipeline Value */}
-        <div className="relative group overflow-hidden bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/20 hover:-translate-y-0.5">
-          <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#01cb65] via-[#01c67d] to-[#00aed0] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-left text-slate-400 select-none">Pipe Value (Est)</span>
-          <div className="flex items-baseline gap-1.5 mt-3">
-            <span className="text-2xl font-black tracking-tight text-slate-900">{stats.pipelineValue}</span>
+        <div className="bg-white border-l-4 border-l-indigo-500 border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group">
+          <div className="text-left">
+            <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400 select-none">Pipeline Value (Est)</span>
+            <div className="flex items-baseline mt-1.5">
+              <span className="text-xl font-black tracking-tight text-slate-900">{stats.pipelineValue}</span>
+            </div>
+          </div>
+          <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100/50 group-hover:scale-110 transition-transform duration-300">
+            <DollarSign className="w-4.5 h-4.5" />
           </div>
         </div>
 
         {/* Avg Lead Score */}
-        <div className="relative group overflow-hidden bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/20 hover:-translate-y-0.5">
-          <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#01cb65] via-[#01c67d] to-[#00aed0] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-left text-slate-400 select-none">Avg Lead Score</span>
-          <div className="flex items-baseline gap-1.5 mt-3">
-            <span className="text-2xl font-black tracking-tight flex items-center gap-1 text-[#01cb65]">
-              <TrendingUp className="w-5 h-5 text-[#01cb65]" />
-              {stats.avgScore}%
-            </span>
+        <div className="bg-white border-l-4 border-l-teal-500 border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group">
+          <div className="text-left">
+            <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400 select-none">Avg Lead Score</span>
+            <div className="flex items-baseline mt-1.5">
+              <span className="text-xl font-black tracking-tight text-slate-900">{stats.avgScore}%</span>
+            </div>
+          </div>
+          <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl border border-teal-100/50 group-hover:scale-110 transition-transform duration-300">
+            <TrendingUp className="w-4.5 h-4.5" />
           </div>
         </div>
 
         {/* High Urgency */}
-        <div className="relative group overflow-hidden bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:border-emerald-500/20 hover:-translate-y-0.5 col-span-2 md:col-span-1">
-          <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#01cb65] via-[#01c67d] to-[#00aed0] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-left text-slate-400 select-none">High Urgency</span>
-          <div className="flex items-baseline gap-1.5 mt-3">
-            <span className="text-2xl font-black tracking-tight text-rose-600">{stats.highUrgency}</span>
-            <span className="text-[9px] font-extrabold uppercase text-slate-400">Action</span>
+        <div className="bg-white border-l-4 border-l-rose-500 border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group col-span-2 md:col-span-1">
+          <div className="text-left">
+            <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400 select-none">High Urgency</span>
+            <div className="flex items-baseline gap-1.5 mt-1.5">
+              <span className="text-xl font-black tracking-tight text-rose-600">{stats.highUrgency}</span>
+              <span className="text-[9px] font-extrabold uppercase text-slate-400">Action</span>
+            </div>
+          </div>
+          <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100/50 group-hover:scale-110 transition-transform duration-300">
+            <Clock className="w-4.5 h-4.5" />
           </div>
         </div>
+
       </div>
 
       {/* Main Board Container */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 animate-scale-in">
         
-        {/* Left Area: Leads List & Filters */}
-        <div className="w-full lg:w-[410px] border-r flex flex-col h-full bg-white border-slate-200/85 shrink-0">
-          
-          {/* Search and Sort Toolbar */}
-          <div className="p-4 border-b border-slate-200/70 space-y-3">
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search leads, areas, brokers..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-9 py-2 border rounded-xl text-xs outline-none transition-all font-semibold bg-slate-50 border-slate-200 focus:border-slate-350 focus:ring-1 focus:ring-slate-100 text-slate-800 placeholder-slate-400"
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Filters select selectors */}
-            <div className="flex gap-2 items-center text-xs">
-              <div className="flex items-center gap-1 text-slate-450 font-extrabold shrink-0">
-                <SlidersHorizontal className="w-3 h-3 text-slate-400" />
-                <span className="text-[9px] uppercase tracking-wider select-none">Filters:</span>
-              </div>
-              
-              <div className="flex flex-wrap gap-1.5 flex-1 select-none">
-                {/* Status Filter */}
-                <select
-                  value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-slate-700 py-1 px-2 rounded-lg text-[10px] font-extrabold outline-none cursor-pointer transition-colors hover:bg-slate-100"
-                >
-                  <option value="All">All Status</option>
-                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-
-                {/* Urgency Filter */}
-                <select
-                  value={urgencyFilter}
-                  onChange={e => setUrgencyFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-slate-750 py-1 px-2 rounded-lg text-[10px] font-extrabold outline-none cursor-pointer transition-colors hover:bg-slate-100"
-                >
-                  <option value="All">All Urgency</option>
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
-
-                {/* Broker Filter */}
-                <select
-                  value={brokerFilter}
-                  onChange={e => setBrokerFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-slate-755 py-1 px-2 rounded-lg text-[10px] font-extrabold outline-none cursor-pointer transition-colors hover:bg-slate-100"
-                >
-                  <option value="All">All Brokers</option>
-                  {BROKERS.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-
-                {/* Sorting options */}
-                <select
-                  value={sortBy}
-                  onChange={e => setSortBy(e.target.value as any)}
-                  className="bg-emerald-50 border border-emerald-250 text-emerald-700 py-1 px-2 rounded-lg text-[10px] font-extrabold ml-auto outline-none cursor-pointer hover:bg-emerald-100/50 transition-colors"
-                >
-                  <option value="score">Sort: Score</option>
-                  <option value="budget">Sort: Budget</option>
-                  <option value="date">Sort: Newest</option>
-                </select>
-              </div>
-            </div>
+        {/* Search, Filter & Action Toolbar */}
+        <div className="p-5 border-b border-slate-200/80 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search client name, area, property type or broker..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-9 py-2.5 border rounded-xl text-xs outline-none transition-all font-semibold bg-[#f8fafc] border-slate-200 focus:border-[#01cb65] focus:ring-1 focus:ring-[#01cb65]/10 text-slate-800 placeholder-slate-400 shadow-inner"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Leads Floating Cards Scroll Area */}
-          <div className="flex-1 overflow-y-auto py-3.5 divide-y-0 scrollbar-thin">
-            {filteredAndSortedLeads.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs italic font-semibold">
-                No matching leads found
+          {/* Filtering Selectors (Custom Dropdowns) */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <div className="flex items-center gap-1 text-slate-400 font-extrabold shrink-0 uppercase tracking-wider text-[9px] mr-1">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+              <span>Filters</span>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              
+              {/* Status Filter */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setIsStatusDropdownOpen(!isStatusDropdownOpen);
+                    setIsUrgencyDropdownOpen(false);
+                    setIsBrokerDropdownOpen(false);
+                    setIsSortDropdownOpen(false);
+                  }}
+                  className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 py-1.5 px-3 rounded-xl text-[11px] font-bold outline-none cursor-pointer hover:border-slate-350 hover:bg-slate-50 transition-all shadow-xs"
+                >
+                  <span>Status: {statusFilter === 'All' ? 'All' : statusFilter}</span>
+                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${isStatusDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isStatusDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setIsStatusDropdownOpen(false)} />
+                    <div className="absolute left-0 mt-1.5 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl z-40 py-1.5 animate-scale-in text-left">
+                      <button
+                        onClick={() => { setStatusFilter('All'); setIsStatusDropdownOpen(false); }}
+                        className={`w-full px-3.5 py-2 text-left text-xs font-bold transition-colors cursor-pointer ${
+                          statusFilter === 'All' ? 'bg-emerald-50 text-emerald-700 font-extrabold' : 'hover:bg-slate-50 text-slate-650'
+                        }`}
+                      >
+                        All Statuses
+                      </button>
+                      {STATUSES.map(s => (
+                        <button
+                          key={s}
+                          onClick={() => { setStatusFilter(s); setIsStatusDropdownOpen(false); }}
+                          className={`w-full px-3.5 py-2 text-left text-xs font-bold transition-colors cursor-pointer ${
+                            statusFilter === s ? 'bg-emerald-50 text-emerald-700 font-extrabold' : 'hover:bg-slate-50 text-slate-655'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
-            ) : (
-              filteredAndSortedLeads.map((lead) => {
-                const isSelected = lead.id === selectedLeadId;
-                return (
-                  <div
-                    key={lead.id}
-                    onClick={() => setSelectedLeadId(lead.id)}
-                    className={`mx-3.5 my-2.5 p-4 rounded-2xl flex flex-col gap-3 transition-all duration-300 cursor-pointer border text-left relative hover:-translate-y-0.5 hover:shadow-md ${
-                      isSelected 
-                        ? 'bg-emerald-50/20 border-emerald-500/40 shadow shadow-emerald-500/5 ring-1 ring-emerald-500/10'
-                        : 'bg-white border-slate-200/90 hover:bg-slate-50/50 hover:border-slate-350'
-                    }`}
-                  >
-                    {/* Header: Name and Urgency */}
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-extrabold text-[13.5px] truncate tracking-tight text-slate-800">{lead.name}</h3>
-                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-md ${getUrgencyBadge(lead.urgency)}`}>
-                        {lead.urgency}
-                      </span>
-                    </div>
 
-                    {/* Meta: Budget and Score */}
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1 font-extrabold py-0.5 px-2 rounded-md border bg-slate-55 border-slate-200/60 text-slate-850">
-                        <DollarSign className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span className="tracking-tight">{lead.budget}</span>
-                      </div>
-                      
-                      {/* Score Indicator */}
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-slate-400 font-bold">Intent Score:</span>
-                        <span className={`font-black text-xs px-1.5 py-0.25 rounded ${
-                          lead.leadScore >= 90 
-                            ? 'text-emerald-700 bg-emerald-50 border border-emerald-100/70' 
-                            : lead.leadScore >= 75 
-                              ? 'text-blue-750 bg-blue-50 border border-blue-100/70' 
-                              : 'text-slate-550 bg-slate-50 border border-slate-200/60'
-                        }`}>
-                          {lead.leadScore}
-                        </span>
-                      </div>
+              {/* Urgency Filter */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setIsUrgencyDropdownOpen(!isUrgencyDropdownOpen);
+                    setIsStatusDropdownOpen(false);
+                    setIsBrokerDropdownOpen(false);
+                    setIsSortDropdownOpen(false);
+                  }}
+                  className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 py-1.5 px-3 rounded-xl text-[11px] font-bold outline-none cursor-pointer hover:border-slate-350 hover:bg-slate-50 transition-all shadow-xs"
+                >
+                  <span>Urgency: {urgencyFilter === 'All' ? 'All' : urgencyFilter}</span>
+                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${isUrgencyDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isUrgencyDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setIsUrgencyDropdownOpen(false)} />
+                    <div className="absolute left-0 mt-1.5 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl z-40 py-1.5 animate-scale-in text-left">
+                      {['All', 'High', 'Medium', 'Low'].map(u => (
+                        <button
+                          key={u}
+                          onClick={() => { setUrgencyFilter(u); setIsUrgencyDropdownOpen(false); }}
+                          className={`w-full px-3.5 py-2 text-left text-xs font-bold transition-colors cursor-pointer ${
+                            urgencyFilter === u ? 'bg-emerald-50 text-emerald-700 font-extrabold' : 'hover:bg-slate-50 text-slate-650'
+                          }`}
+                        >
+                          {u === 'All' ? 'All Urgencies' : `${u} Urgency`}
+                        </button>
+                      ))}
                     </div>
+                  </>
+                )}
+              </div>
 
-                    {/* Area and Type */}
-                    <div className="flex gap-2 text-[11px] items-center font-bold text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="truncate max-w-[120px]">{lead.area}</span>
-                      </span>
-                      <span className="text-slate-300">•</span>
-                      <span className="flex items-center gap-1">
-                        <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>{lead.propertyType}</span>
-                      </span>
+              {/* Broker Filter */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setIsBrokerDropdownOpen(!isBrokerDropdownOpen);
+                    setIsStatusDropdownOpen(false);
+                    setIsUrgencyDropdownOpen(false);
+                    setIsSortDropdownOpen(false);
+                  }}
+                  className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 py-1.5 px-3 rounded-xl text-[11px] font-bold outline-none cursor-pointer hover:border-slate-350 hover:bg-slate-50 transition-all shadow-xs"
+                >
+                  <span>Broker: {brokerFilter === 'All' ? 'All' : brokerFilter}</span>
+                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${isBrokerDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isBrokerDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setIsBrokerDropdownOpen(false)} />
+                    <div className="absolute left-0 mt-1.5 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl z-40 py-1.5 animate-scale-in text-left">
+                      <button
+                        onClick={() => { setBrokerFilter('All'); setIsBrokerDropdownOpen(false); }}
+                        className={`w-full px-3.5 py-2 text-left text-xs font-bold transition-colors cursor-pointer ${
+                          brokerFilter === 'All' ? 'bg-emerald-50 text-emerald-700 font-extrabold' : 'hover:bg-slate-50 text-slate-655'
+                        }`}
+                      >
+                        All Brokers
+                      </button>
+                      {BROKERS.map(b => (
+                        <button
+                          key={b}
+                          onClick={() => { setBrokerFilter(b); setIsBrokerDropdownOpen(false); }}
+                          className={`w-full px-3.5 py-2 text-left text-xs font-bold transition-colors cursor-pointer ${
+                            brokerFilter === b ? 'bg-emerald-50 text-emerald-700 font-extrabold' : 'hover:bg-slate-50 text-slate-650'
+                          }`}
+                        >
+                          {b}
+                        </button>
+                      ))}
                     </div>
+                  </>
+                )}
+              </div>
 
-                    {/* Footer: Broker and Status */}
-                    <div className="flex justify-between items-center text-[10px] pt-2.5 border-t font-bold border-slate-100 text-slate-500">
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-4.5 h-4.5 rounded-full flex items-center justify-center text-[9px] font-black border bg-slate-50 text-slate-650 border-slate-200">
-                          {lead.assignedBroker[0]}
-                        </span>
-                        <span>Broker: <span className="text-slate-800 font-extrabold">{lead.assignedBroker}</span></span>
-                      </span>
-                      <span className={`px-2 py-0.5 rounded font-black tracking-wide uppercase text-[9px] ${getStatusBadge(lead.status)}`}>
-                        {lead.status}
-                      </span>
+              {/* Sort By Filter */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setIsSortDropdownOpen(!isSortDropdownOpen);
+                    setIsStatusDropdownOpen(false);
+                    setIsUrgencyDropdownOpen(false);
+                    setIsBrokerDropdownOpen(false);
+                  }}
+                  className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-250 text-emerald-700 py-1.5 px-3 rounded-xl text-[11px] font-extrabold outline-none cursor-pointer hover:bg-emerald-100/50 transition-all shadow-xs"
+                >
+                  <span>Sort: {sortBy === 'score' ? 'Intent Score' : sortBy === 'budget' ? 'Budget' : 'Date Added'}</span>
+                  <ChevronDown className={`w-3 h-3 text-emerald-600 transition-transform duration-200 ${isSortDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isSortDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setIsSortDropdownOpen(false)} />
+                    <div className="absolute right-0 mt-1.5 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl z-40 py-1.5 animate-scale-in text-left">
+                      {[
+                        { value: 'score', label: 'Intent Score' },
+                        { value: 'budget', label: 'Budget' },
+                        { value: 'date', label: 'Date Added' }
+                      ].map(item => (
+                        <button
+                          key={item.value}
+                          onClick={() => { setSortBy(item.value as any); setIsSortDropdownOpen(false); }}
+                          className={`w-full px-3.5 py-2 text-left text-xs font-bold transition-colors cursor-pointer ${
+                            sortBy === item.value ? 'bg-emerald-50 text-emerald-750 font-extrabold' : 'hover:bg-slate-50 text-slate-650'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
                     </div>
-                  </div>
-                );
-              })
-            )}
+                  </>
+                )}
+              </div>
+
+            </div>
           </div>
         </div>
 
-        {/* Right Area: Selected Lead Details Panel */}
-        {selectedLead ? (
-          <div className="flex-1 flex flex-col h-full bg-slate-50/30 overflow-y-auto">
-            {/* Lead Details Header with glowing gradient backdrop */}
-            <div className="p-6 md:p-8 border-b border-slate-200/80 bg-white/95 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-2xs">
-              <div className="flex items-center gap-5">
-                {/* Big Avatar with rotating glowing border */}
-                <div className="relative group shrink-0">
-                  <div className="absolute -inset-0.5 rounded-full blur-sm opacity-25 group-hover:opacity-45 transition duration-500 bg-gradient-to-tr from-[#01cb65] to-[#00aed0]"></div>
-                  <div className="relative w-15 h-15 rounded-full flex items-center justify-center text-lg font-black border bg-slate-50 text-slate-800 border-slate-200/90 shadow-inner">
-                    {selectedLead.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                </div>
-                
-                <div className="flex flex-col text-left">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-xl md:text-2xl font-black tracking-tight text-slate-900">{selectedLead.name}</h2>
-                    <span className={`text-[9px] font-black tracking-wide uppercase px-2.5 py-0.5 rounded border ${getStatusBadge(selectedLead.status)}`}>
-                      {selectedLead.status}
-                    </span>
-                  </div>
-                  
-                  <span className="text-xs text-slate-400 font-bold flex items-center gap-1.5 mt-1.5 select-none">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    Registered {selectedLead.createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action shortcuts */}
-              <div className="flex gap-2.5 w-full md:w-auto">
-                <a
-                  href={`tel:${selectedLead.phone}`}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 cursor-pointer active:scale-95 bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:shadow-xs"
-                >
-                  <Phone className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Call Representative</span>
-                </a>
-                <a
-                  href={`mailto:${selectedLead.email}`}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 cursor-pointer active:scale-95 bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:shadow-xs"
-                >
-                  <Mail className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Send Mail</span>
-                </a>
-              </div>
+        {/* Dashboard leads list content */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredAndSortedLeads.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-16 text-slate-400 text-center">
+              <span className="p-3 bg-slate-100 rounded-full mb-3">
+                <Briefcase className="w-6 h-6 text-slate-350" />
+              </span>
+              <p className="text-xs font-extrabold">No matching leads found</p>
+              <p className="text-[10px] text-slate-400 mt-1">Try adjusting your filters or search query.</p>
             </div>
+          ) : (
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/70 text-[10px] font-extrabold uppercase tracking-wider text-slate-450 select-none">
+                      <th className="py-4 px-6">Client Info</th>
+                      <th className="py-4 px-4">Requirements</th>
+                      <th className="py-4 px-4 text-center">AI Intent</th>
+                      <th className="py-4 px-4 text-center">Urgency</th>
+                      <th className="py-4 px-4">Assigned Representative</th>
+                      <th className="py-4 px-4">Pipeline Status</th>
+                      <th className="py-4 px-4">Date Added</th>
+                      <th className="py-4 px-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {filteredAndSortedLeads.map((lead) => (
+                      <tr 
+                        key={lead.id}
+                        onClick={() => {
+                          setSelectedLeadId(lead.id);
+                          // Close any active filter dropdowns
+                          setIsStatusDropdownOpen(false);
+                          setIsUrgencyDropdownOpen(false);
+                          setIsBrokerDropdownOpen(false);
+                          setIsSortDropdownOpen(false);
+                        }}
+                        className="group hover:bg-emerald-50/5 transition-colors duration-150 cursor-pointer"
+                      >
+                        {/* Client Info with custom gradient avatar */}
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-3.5">
+                            <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${getAvatarGradient(lead.name)} flex items-center justify-center text-xs font-black shadow-inner`}>
+                              {lead.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <div className="flex flex-col text-left">
+                              <span className="font-extrabold text-sm text-slate-900 group-hover:text-[#01cb65] transition-colors">{lead.name}</span>
+                              <span className="text-[10.5px] text-slate-450 mt-0.5 leading-none">{lead.email}</span>
+                            </div>
+                          </div>
+                        </td>
 
-            {/* Core Info Cards */}
-            <div className="p-6 md:p-8 space-y-8 max-w-5xl">
-              
-              {/* Properties Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                
-                {/* Budget */}
-                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-350 hover:shadow-xs">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-500/20">
-                    <DollarSign className="w-5 h-5 shrink-0" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">Target Budget</span>
-                    <p className="text-lg font-black mt-1 tracking-tight text-slate-900">{selectedLead.budget}</p>
-                  </div>
-                </div>
+                        {/* Requirements */}
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col gap-1 text-xs text-left">
+                            <span className="font-bold text-slate-800 flex items-center gap-1">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              {lead.area}
+                            </span>
+                            <span className="text-[10.5px] text-slate-450 font-medium">
+                              {lead.propertyType} • <span className="font-extrabold text-emerald-600">{lead.budget}</span>
+                            </span>
+                          </div>
+                        </td>
 
-                {/* Area */}
-                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-350 hover:shadow-xs">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50/80 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-200/35">
-                    <MapPin className="w-5 h-5 shrink-0" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">Preferred Area</span>
-                    <p className="text-lg font-black mt-1 tracking-tight text-slate-900">{selectedLead.area}</p>
-                  </div>
-                </div>
+                        {/* AI Intent score circle / badge */}
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col items-center gap-1.5 justify-center">
+                            <span className={`font-black text-[10.5px] px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                              lead.leadScore >= 90 
+                                ? 'text-emerald-700 bg-emerald-50 border border-emerald-200/60' 
+                                : lead.leadScore >= 75 
+                                  ? 'text-blue-700 bg-blue-50 border border-blue-200/60' 
+                                  : 'text-slate-600 bg-slate-50 border border-slate-200/60'
+                            }`}>
+                              <Sparkles className="w-3 h-3 text-current" />
+                              {lead.leadScore}
+                            </span>
+                            <div className="w-16 bg-slate-100 rounded-full h-1 overflow-hidden border border-slate-200/60">
+                              <div 
+                                className="bg-gradient-to-r from-[#01cb65] to-[#00aed0] h-full rounded-full"
+                                style={{ width: `${lead.leadScore}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </td>
 
-                {/* Property Type */}
-                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-350 hover:shadow-xs">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50/80 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-200/35">
-                    <Building2 className="w-5 h-5 shrink-0" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">Property Type</span>
-                    <p className="text-lg font-black mt-1 tracking-tight text-slate-900">{selectedLead.propertyType}</p>
-                  </div>
-                </div>
+                        {/* Urgency */}
+                        <td className="py-4 px-4 text-center">
+                          <div className="flex justify-center">
+                            {renderUrgencyBadge(lead.urgency)}
+                          </div>
+                        </td>
 
-                {/* Lead score with glowing progress line */}
-                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-355 hover:shadow-xs">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50/80 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-200/35">
-                    <Sparkles className="w-5 h-5 shrink-0" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">AI Lead Score</span>
-                    <div className="flex items-baseline gap-2 mt-1">
-                      <p className="text-lg font-black tracking-tight text-slate-900">{selectedLead.leadScore}/100</p>
-                      <span className="text-[9px] font-extrabold text-[#01cb65] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">High Intent</span>
-                    </div>
-                    {/* Glowing progress line with Pixxi brand gradient */}
-                    <div className="w-full rounded-full h-1 mt-3 overflow-hidden border bg-slate-100 border-slate-200">
-                      <div 
-                        className="bg-gradient-to-r from-[#01cb65] to-[#00aed0] h-full rounded-full"
-                        style={{ width: `${selectedLead.leadScore}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
+                        {/* Broker representative info */}
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2.5 text-xs text-left">
+                            <span className="w-5.5 h-5.5 rounded-full flex items-center justify-center text-[9px] font-black border bg-slate-50 text-slate-650 border-slate-200 shadow-2xs">
+                              {lead.assignedBroker[0]}
+                            </span>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-slate-800">{lead.assignedBroker}</span>
+                              <span className="text-[9px] text-slate-400 font-medium">Broker Agent</span>
+                            </div>
+                          </div>
+                        </td>
 
-                {/* Urgency */}
-                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-350 hover:shadow-xs">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50/80 flex items-center justify-center text-emerald-650 shrink-0 border border-emerald-200/35">
-                    <Clock className="w-5 h-5 shrink-0" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">Deal Urgency</span>
-                    <p className="text-lg font-black mt-1 tracking-tight flex items-center gap-2 text-slate-900">
-                      <span className={`w-2.5 h-2.5 rounded-full ${selectedLead.urgency === 'High' ? 'bg-rose-500 shadow-xs' : selectedLead.urgency === 'Medium' ? 'bg-amber-500 shadow-xs' : 'bg-emerald-500 shadow-xs'}`}></span>
-                      {selectedLead.urgency} Urgency
-                    </p>
-                  </div>
-                </div>
+                        {/* Pipeline Status */}
+                        <td className="py-4 px-4 text-left">
+                          {renderStatusBadge(lead.status)}
+                        </td>
 
-                {/* Contact details */}
-                <div className="border border-slate-200/90 rounded-2xl p-5 text-left flex items-start gap-4 transition-all duration-300 bg-white hover:border-slate-350 hover:shadow-xs">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50/80 flex items-center justify-center text-emerald-600 shrink-0 border border-[#bbf7d0]/30">
-                    <UserCheck className="w-5 h-5 shrink-0" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest select-none">Contact details</span>
-                    <p className="text-xs font-bold mt-1.5 truncate select-all text-slate-800">{selectedLead.email}</p>
-                    <p className="text-[11px] mt-0.5 font-mono tracking-tight select-all text-slate-500">{selectedLead.phone}</p>
-                  </div>
-                </div>
+                        {/* Date Added */}
+                        <td className="py-4 px-4 text-left">
+                          <span className="text-[10px] text-slate-400 font-bold">
+                            {new Date(lead.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          </span>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-4 px-6 text-right">
+                          <div className="flex items-center justify-end gap-2.5">
+                            {onQualifyLead && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onQualifyLead(lead);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                title="Qualify with AI Chat"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLeadId(lead.id);
+                              }}
+                              className="px-3 py-1 text-[11px] font-black text-[#01cb65] bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-lg transition-colors cursor-pointer"
+                            >
+                              Details
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
-              {/* Action Controls Board (Segmented layout) */}
-              <div className="border border-slate-200/90 rounded-2xl p-6 text-left bg-white shadow-xs">
-                <h3 className="text-xs font-bold text-slate-450 uppercase tracking-widest mb-5 flex items-center gap-2 select-none">
-                  <SlidersHorizontal className="w-4 h-4 text-slate-450" />
-                  <span>Pipeline & Broker Assignment</span>
-                </h3>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Status update selector (Premium Segmented Control in Pixxi style) */}
-                  <div className="flex flex-col gap-2.5">
-                    <label className="text-[10px] font-bold text-slate-450 uppercase tracking-widest select-none">Lead Pipeline Status</label>
-                    <div className="flex p-1 rounded-xl border w-full transition-all duration-300 bg-slate-50 border-slate-200">
-                      {STATUSES.map(s => {
-                        const isSelected = selectedLead.status === s;
-                        return (
-                          <button
-                            key={s}
-                            onClick={() => handleUpdateStatus(selectedLead.id, s as any)}
-                            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all duration-350 cursor-pointer ${
-                              isSelected 
-                                ? 'bg-gradient-to-r from-[#01cb65] to-[#00aed0] text-white shadow-xs'
-                                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
-                            }`}
-                          >
-                            {s}
-                          </button>
-                        );
-                      })}
+              {/* Mobile Cards View */}
+              <div className="md:hidden flex flex-col gap-3.5 p-4">
+                {filteredAndSortedLeads.map((lead) => (
+                  <div
+                    key={lead.id}
+                    onClick={() => setSelectedLeadId(lead.id)}
+                    className="bg-white border border-slate-200/90 rounded-2xl p-4.5 flex flex-col gap-3 transition-all hover:shadow-md active:scale-[0.99] cursor-pointer"
+                  >
+                    {/* Header: Name, Score and Status */}
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${getAvatarGradient(lead.name)} flex items-center justify-center text-xs font-black`}>
+                          {lead.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div className="flex flex-col text-left">
+                          <h4 className="font-extrabold text-sm text-slate-900">{lead.name}</h4>
+                          <span className="text-[10px] text-slate-450">{lead.email}</span>
+                        </div>
+                      </div>
+                      {renderStatusBadge(lead.status)}
                     </div>
-                  </div>
 
-                  {/* Broker re-assignment selection */}
-                  <div className="flex flex-col gap-2.5">
-                    <label className="text-[10px] font-bold text-slate-450 uppercase tracking-widest select-none">Assigned Broker Agent</label>
-                    <div className="relative">
-                      <select
-                        value={selectedLead.assignedBroker}
-                        onChange={e => handleUpdateBroker(selectedLead.id, e.target.value)}
-                        className="w-full py-2.5 pl-4 pr-10 rounded-xl text-xs font-bold outline-none cursor-pointer appearance-none transition-all duration-200 border bg-slate-50 border-slate-200 text-slate-800 hover:border-slate-300"
-                      >
-                        {BROKERS.map(b => (
-                          <option key={b} value={b}>Broker Representative: {b}</option>
-                        ))}
-                      </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-500">
-                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                    {/* Details requirements grid */}
+                    <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-100 text-left">
+                      <div className="flex flex-col">
+                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Budget</span>
+                        <span className="text-xs font-black text-emerald-600">{lead.budget}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Location</span>
+                        <span className="text-xs font-extrabold text-slate-800 truncate">{lead.area}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Type</span>
+                        <span className="text-xs font-bold text-slate-650">{lead.propertyType}</span>
                       </div>
                     </div>
+
+                    {/* Footer: Score, Urgency, Broker */}
+                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-slate-400">Score:</span>
+                        <span className={`font-black text-[10px] px-2 py-0.25 rounded-full inline-flex items-center gap-0.5 text-emerald-700 bg-emerald-50 border border-emerald-100`}>
+                          <Sparkles className="w-2.5 h-2.5" />
+                          {lead.leadScore}
+                        </span>
+                      </div>
+                      {renderUrgencyBadge(lead.urgency)}
+                      <span className="flex items-center gap-1">
+                        <span className="w-4 h-4 rounded-full border bg-slate-50 text-[8px] flex items-center justify-center font-black text-slate-600">
+                          {lead.assignedBroker[0]}
+                        </span>
+                        <span>{lead.assignedBroker}</span>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Details Slide-Over Drawer */}
+      {selectedLead && (
+        <>
+          {/* Backdrop with fade-in and blur */}
+          <div 
+            onClick={() => {
+              setSelectedLeadId(null);
+              setIsDrawerBrokerDropdownOpen(false);
+            }}
+            className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs transition-all duration-300 animate-in fade-in"
+          />
+          
+          {/* Drawer Panel with slide-in from right */}
+          <div className="fixed inset-y-0 right-0 z-50 w-full md:w-[650px] bg-white shadow-2xl border-l border-slate-200/90 flex flex-col h-full overflow-hidden animate-slide-in-right">
+            
+            {/* Drawer Header */}
+            <div className="px-6 py-5.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+              <div className="flex items-center gap-3.5 text-left">
+                <div className={`w-11 h-11 rounded-full bg-gradient-to-tr ${getAvatarGradient(selectedLead.name)} flex items-center justify-center text-sm font-black shadow-inner`}>
+                  {selectedLead.name.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-900 leading-tight">{selectedLead.name}</h2>
+                  <span className="text-[10px] text-slate-400 font-bold">Registered {selectedLead.createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => {
+                  setSelectedLeadId(null);
+                  setIsDrawerBrokerDropdownOpen(false);
+                }}
+                className="p-1.5 hover:bg-slate-200 rounded-full text-slate-450 hover:text-slate-850 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drawer Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              
+              {/* Quick Contact & Qualification Actions */}
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={`tel:${selectedLead.phone}`}
+                  className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 bg-white hover:bg-slate-50 text-slate-700 border-slate-205 hover:shadow-xs active:scale-95"
+                >
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Call Lead</span>
+                </a>
+                
+                <a
+                  href={`mailto:${selectedLead.email}`}
+                  className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 bg-white hover:bg-slate-50 text-slate-700 border-slate-205 hover:shadow-xs active:scale-95"
+                >
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Email Lead</span>
+                </a>
+
+                {onQualifyLead && (
+                  <button
+                    onClick={() => {
+                      onQualifyLead(selectedLead);
+                      setSelectedLeadId(null);
+                      setIsDrawerBrokerDropdownOpen(false);
+                    }}
+                    className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all duration-250 bg-gradient-to-r from-[#01cb65] to-[#00aed0] hover:opacity-90 text-white shadow-sm hover:shadow active:scale-95 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>AI Qualification</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Requirements Section Header */}
+              <div className="text-left">
+                <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none mb-3">Primary Client Specifications</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Target Budget */}
+                  <div className="border border-slate-150 rounded-2xl p-4 text-left flex items-start gap-3 bg-slate-50/40 hover:shadow-xs transition-shadow">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center shrink-0">
+                      <DollarSign className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Target Budget</span>
+                      <p className="text-sm font-black mt-0.5 tracking-tight text-slate-900">{selectedLead.budget}</p>
+                    </div>
+                  </div>
+
+                  {/* Area */}
+                  <div className="border border-slate-150 rounded-2xl p-4 text-left flex items-start gap-3 bg-slate-50/40 hover:shadow-xs transition-shadow">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Preferred Area</span>
+                      <p className="text-sm font-black mt-0.5 tracking-tight text-slate-900">{selectedLead.area}</p>
+                    </div>
+                  </div>
+
+                  {/* Property Type */}
+                  <div className="border border-slate-150 rounded-2xl p-4 text-left flex items-start gap-3 bg-slate-50/40 hover:shadow-xs transition-shadow">
+                    <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 border border-purple-100 flex items-center justify-center shrink-0">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Property Type</span>
+                      <p className="text-sm font-black mt-0.5 tracking-tight text-slate-900">{selectedLead.propertyType}</p>
+                    </div>
+                  </div>
+
+                  {/* Lead Urgency */}
+                  <div className="border border-slate-150 rounded-2xl p-4 text-left flex items-start gap-3 bg-slate-50/40 hover:shadow-xs transition-shadow">
+                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 border border-amber-100 flex items-center justify-center shrink-0">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Deal Urgency</span>
+                      <p className="text-sm font-black mt-0.5 tracking-tight text-slate-900 flex items-center gap-1.5">
+                        {renderUrgencyBadge(selectedLead.urgency)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Contact details */}
+                  <div className="border border-slate-150 rounded-2xl p-4 text-left flex items-start gap-3 bg-slate-50/40 hover:shadow-xs transition-shadow col-span-2">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-650 border border-slate-200 flex items-center justify-center shrink-0">
+                      <UserCheck className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest font-sans">Contact Details</span>
+                      <p className="text-xs font-bold mt-1 text-slate-800 select-all truncate">{selectedLead.email}</p>
+                      <p className="text-[10px] mt-0.5 font-mono tracking-tight text-slate-500 select-all">{selectedLead.phone}</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Notes and Activity Timeline Section with sleek left border timeline design */}
+              {/* AI Intent Score Card */}
+              <div className="border border-slate-200/80 rounded-2xl p-5 text-left bg-gradient-to-r from-emerald-50/15 to-blue-50/15 relative overflow-hidden">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4.5 h-4.5 text-[#01cb65] animate-pulse" />
+                    <span className="text-xs font-extrabold text-slate-800">AI Intent & Qualification Score</span>
+                  </div>
+                  <span className="text-lg font-black text-slate-950">{selectedLead.leadScore}/100</span>
+                </div>
+                <p className="text-[10px] text-slate-400 font-semibold mt-1">Based on engagement frequency, budget match, and response sentiment analysis.</p>
+                <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden border border-slate-200/60">
+                  <div 
+                    className="bg-gradient-to-r from-[#01cb65] to-[#00aed0] h-full rounded-full"
+                    style={{ width: `${selectedLead.leadScore}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Pipeline & Broker Settings */}
+              <div className="border border-slate-200/95 rounded-2xl p-5 text-left bg-white shadow-xs space-y-4 animate-scale-in">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 select-none">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Workflow Parameters</span>
+                </h3>
+                
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-0.5">Lead Pipeline Status</label>
+                  <div className="flex p-0.5 rounded-lg border w-full bg-slate-50 border-slate-150">
+                    {STATUSES.map(s => {
+                      const isSelected = selectedLead.status === s;
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => handleUpdateStatus(selectedLead.id, s as any)}
+                          className={`flex-1 py-1.5 text-[10.5px] font-extrabold rounded-md transition-all cursor-pointer ${
+                            isSelected 
+                              ? 'bg-gradient-to-r from-[#01cb65] to-[#00aed0] text-white shadow-xs'
+                              : 'text-slate-550 hover:text-slate-850 hover:bg-slate-100/50'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Assigned Broker Custom Dropdown */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-0.5">Assigned Broker Agent</label>
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsDrawerBrokerDropdownOpen(!isDrawerBrokerDropdownOpen)}
+                      className="w-full flex items-center justify-between py-2.5 px-3.5 rounded-xl text-xs font-bold outline-none border bg-slate-50 border-slate-200 text-slate-800 hover:border-slate-300 transition-all cursor-pointer text-left shadow-xs"
+                    >
+                      <span>Broker Representative: {selectedLead.assignedBroker}</span>
+                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isDrawerBrokerDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {isDrawerBrokerDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setIsDrawerBrokerDropdownOpen(false)} />
+                        <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 py-1.5 animate-scale-in text-left">
+                          {BROKERS.map(b => (
+                            <button
+                              key={b}
+                              onClick={() => {
+                                handleUpdateBroker(selectedLead.id, b);
+                                setIsDrawerBrokerDropdownOpen(false);
+                              }}
+                              className={`w-full px-4 py-2 text-left text-xs font-bold transition-colors cursor-pointer ${
+                                selectedLead.assignedBroker === b ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-slate-50 text-slate-650'
+                              }`}
+                            >
+                              Broker Representative: {b}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Interaction History & Notes */}
               <div className="text-left space-y-4">
-                <h3 className="text-xs font-bold text-slate-450 uppercase tracking-widest flex items-center gap-2 select-none">
-                  <MessageSquare className="w-4 h-4 text-emerald-600" />
-                  <span>Interaction History & Broker Logs ({selectedLead.notes.length})</span>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 select-none pl-0.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Interaction Logs ({selectedLead.notes.length})</span>
                 </h3>
 
                 {/* Add Note Input Area */}
-                <div className="flex items-start gap-3 border rounded-xl p-3 transition-all duration-200 shadow-inner bg-white border-slate-200/90 focus-within:border-slate-400">
+                <div className="flex items-start gap-2 border rounded-xl p-3 shadow-inner bg-white border-slate-200 focus-within:border-slate-400">
                   <textarea
                     rows={2}
                     value={newNoteContent}
                     onChange={e => setNewNoteContent(e.target.value)}
                     placeholder="Log a client callback details or add critical brokerage notes..."
-                    className="flex-1 bg-transparent border-0 outline-none text-xs sm:text-sm py-1 resize-none font-semibold leading-relaxed text-slate-800 placeholder-slate-400"
+                    className="flex-1 bg-transparent border-0 outline-none text-xs py-1 resize-none font-semibold leading-relaxed text-slate-800 placeholder-slate-400"
                   />
                   <button
                     onClick={() => handleAddNote(selectedLead.id)}
                     disabled={!newNoteContent.trim()}
-                    className={`p-2.5 rounded-lg transition-all duration-300 flex items-center justify-center shrink-0 cursor-pointer ${
+                    className={`p-2 rounded-lg transition-all flex items-center justify-center shrink-0 cursor-pointer ${
                       newNoteContent.trim()
                         ? 'bg-gradient-to-r from-[#01cb65] to-[#00aed0] text-white shadow' 
-                        : 'text-slate-350 bg-slate-100 cursor-not-allowed border border-transparent'
+                        : 'text-slate-300 bg-slate-100 cursor-not-allowed'
                     }`}
                   >
                     <Send className="w-3.5 h-3.5" />
@@ -821,35 +1166,40 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
                 </div>
 
                 {/* Notes List with visual timeline connector */}
-                <div className="space-y-4.5 relative pl-4 border-l ml-3.5 mt-6 pb-2 transition-colors duration-300 border-slate-200">
+                <div className="space-y-4 relative pl-3.5 border-l ml-3.5 mt-4 pb-2 border-slate-200">
                   {selectedLead.notes.map((note) => (
                     <div 
                       key={note.id}
-                      className="group relative border rounded-xl p-4.5 flex flex-col gap-2.5 transition-all duration-300 hover:shadow bg-white border-slate-200/70 hover:border-slate-355"
+                      className="group relative border border-slate-150/80 rounded-xl p-3.5 flex flex-col gap-2 transition-all hover:shadow bg-white hover:border-slate-300 animate-scale-in"
                     >
                       {/* Timeline dot */}
-                      <div className="absolute -left-[21.5px] top-[23px] w-2 h-2 rounded-full bg-emerald-600 border border-white ring-4 ring-emerald-500/10 group-hover:scale-125 transition-transform duration-300"></div>
+                      <div className="absolute -left-[20px] top-[18px] w-2.5 h-2.5 rounded-full bg-emerald-650 border border-white ring-4 ring-emerald-500/10 group-hover:scale-110 transition-transform"></div>
 
-                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 select-none">
-                        <span className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black border bg-slate-50 text-slate-650 border-slate-200">
+                      <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 select-none">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-4.5 h-4.5 rounded-full flex items-center justify-center text-[7.5px] font-black border bg-slate-50 text-slate-655 border-slate-200">
                             {note.author[0]}
                           </span>
                           <span>Logged by <span className="text-slate-700 font-extrabold">{note.author}</span></span>
                         </span>
                         
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold text-slate-550">{note.createdAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} • {note.createdAt.toLocaleDateString()}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-450">
+                            {note.createdAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} • {note.createdAt.toLocaleDateString()}
+                          </span>
                           <button
-                            onClick={() => handleDeleteNote(selectedLead.id, note.id)}
-                            className="transition-colors p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-slate-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteNote(selectedLead.id, note.id);
+                            }}
+                            className="transition-colors p-0.5 rounded text-slate-400 hover:text-rose-500 hover:bg-slate-50 cursor-pointer"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
 
-                      <p className="text-xs sm:text-sm leading-relaxed font-semibold text-slate-700">
+                      <p className="text-xs leading-relaxed font-semibold text-slate-700">
                         {note.content}
                       </p>
                     </div>
@@ -859,13 +1209,8 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
 
             </div>
           </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center font-bold text-xs tracking-wide italic p-8 transition-colors duration-300 bg-slate-50/50 text-slate-450">
-            Select a lead from the sidebar to inspect parameters
-          </div>
-        )}
-
-      </div>
+        </>
+      )}
     </div>
   );
 };

@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside 
-      className={`fixed lg:relative z-30 h-full flex flex-col justify-between bg-white border-r border-slate-200/80 transition-all duration-300 ${
+      className={`fixed lg:relative z-30 h-full flex flex-col justify-between bg-white border-r border-slate-200/80 transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) ${
         isOpen ? 'w-64' : 'w-20'
       }`}
     >
@@ -58,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Menu className="w-5 h-5" />
           </button>
           {isOpen && (
-            <div className="ml-3 flex items-center gap-1.5 font-bold text-slate-900 tracking-tight select-none">
+            <div className="ml-3 flex items-center gap-1.5 font-bold text-slate-900 tracking-tight select-none animate-fade-in-up">
               <span className="p-1.5 bg-gradient-to-tr from-[#01cb65] to-[#00aed0] text-white rounded-lg flex items-center justify-center shadow-sm">
                 <Sparkles className="w-4 h-4" />
               </span>
@@ -72,36 +72,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex flex-col gap-1.5 mb-6">
           <button
             onClick={() => setActiveView('leads')}
-            className={`flex items-center gap-3 transition-all duration-200 cursor-pointer ${
+            className={`flex items-center gap-3 transition-all duration-300 ease-out cursor-pointer ${
               isOpen 
                 ? 'px-4 py-2.5 rounded-xl w-full justify-start' 
                 : 'p-3 rounded-xl w-12 h-12 justify-center mx-auto'
             } ${
               activeView === 'leads' 
-                ? 'bg-emerald-50 text-[#01cb65] border border-emerald-100/60 font-semibold' 
+                ? 'bg-emerald-50 text-[#01cb65] border border-emerald-100/60 font-semibold shadow-xs' 
                 : 'hover:bg-slate-50 text-slate-500 hover:text-slate-850 border border-transparent'
             }`}
             title="Lead Inbox"
           >
-            <Briefcase className="w-5 h-5 shrink-0" />
-            {isOpen && <span className="text-sm font-medium">Lead Inbox</span>}
+            <Briefcase className="w-5 h-5 shrink-0 transition-transform duration-300 group-hover:scale-115" />
+            {isOpen && <span className="text-sm font-medium animate-fade-in-up">Lead Inbox</span>}
           </button>
 
           <button
             onClick={() => setActiveView('chat')}
-            className={`flex items-center gap-3 transition-all duration-200 cursor-pointer ${
+            className={`flex items-center gap-3 transition-all duration-300 ease-out cursor-pointer ${
               isOpen 
                 ? 'px-4 py-2.5 rounded-xl w-full justify-start' 
                 : 'p-3 rounded-xl w-12 h-12 justify-center mx-auto'
             } ${
               activeView === 'chat' 
-                ? 'bg-emerald-50 text-[#01cb65] border border-emerald-100/60 font-semibold' 
+                ? 'bg-emerald-50 text-[#01cb65] border border-emerald-100/60 font-semibold shadow-xs' 
                 : 'hover:bg-slate-50 text-slate-500 hover:text-slate-850 border border-transparent'
             }`}
             title="AI Chat Assistant"
           >
-            <Sparkles className="w-5 h-5 shrink-0" />
-            {isOpen && <span className="text-sm font-medium">Chat Agent</span>}
+            <Sparkles className="w-5 h-5 shrink-0 transition-transform duration-300 group-hover:scale-115" />
+            {isOpen && <span className="text-sm font-medium animate-fade-in-up">Chat Agent</span>}
           </button>
         </div>
 
@@ -202,28 +202,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex flex-col pb-6 px-3 gap-2">
         <button 
           onClick={openHelpModal}
-          className={`flex items-center gap-3 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-full transition-all duration-200 cursor-pointer ${
+          className={`flex items-center gap-3 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-full transition-all duration-300 ease-out cursor-pointer ${
             isOpen ? 'px-4 py-3 w-full justify-start' : 'p-3 w-12 h-12 justify-center mx-auto'
           }`}
           title="Help"
         >
-          <HelpCircle className="w-5 h-5" />
-          {isOpen && <span className="text-sm font-medium">Help</span>}
+          <HelpCircle className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
+          {isOpen && <span className="text-sm font-medium animate-fade-in-up">Help</span>}
         </button>
 
         <button 
           onClick={() => setActiveView('settings')}
-          className={`flex items-center gap-3 transition-all duration-200 cursor-pointer ${
+          className={`flex items-center gap-3 transition-all duration-300 ease-out cursor-pointer ${
             isOpen ? 'px-4 py-3 w-full justify-start' : 'p-3 w-12 h-12 justify-center mx-auto'
           } ${
             activeView === 'settings' 
-              ? 'bg-emerald-50 text-[#01cb65] border border-emerald-100/60 font-semibold' 
+              ? 'bg-emerald-50 text-[#01cb65] border border-emerald-100/60 font-semibold shadow-xs' 
               : 'hover:bg-slate-50 text-slate-500 hover:text-slate-850 border border-transparent'
           }`}
           title="Settings"
         >
-          <Settings className="w-5 h-5" />
-          {isOpen && <span className="text-sm font-medium">Settings</span>}
+          <Settings className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
+          {isOpen && <span className="text-sm font-medium animate-fade-in-up">Settings</span>}
         </button>
 
         <div className="border-t border-slate-100 my-2" />

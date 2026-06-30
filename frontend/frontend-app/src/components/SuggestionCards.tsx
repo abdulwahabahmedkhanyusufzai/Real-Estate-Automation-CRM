@@ -53,12 +53,12 @@ export const SuggestionCards: React.FC<SuggestionCardsProps> = ({ onSelectSugges
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl w-full mx-auto px-4 mt-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl w-full mx-auto px-4 mt-8 animate-scale-in">
       {suggestions.map((suggestion) => (
         <button
           key={suggestion.id}
           onClick={() => onSelectSuggestion(suggestion.prompt)}
-          className="group flex flex-col justify-between p-5 h-48 bg-white border border-slate-200/80 hover:border-slate-350 hover:bg-slate-50/40 rounded-2xl text-left transition-all duration-300 cursor-pointer shadow-xs hover:shadow-sm relative overflow-hidden"
+          className="group flex flex-col justify-between p-5 h-48 bg-white border border-slate-200/80 hover:border-[#01cb65]/30 hover:bg-slate-50/40 rounded-2xl text-left transition-all duration-300 ease-out cursor-pointer shadow-xs hover:shadow-md hover:-translate-y-1.5 relative overflow-hidden"
         >
           <div className="flex flex-col gap-2">
             <h3 className="font-extrabold text-slate-800 group-hover:text-[#01cb65] transition-colors text-base line-clamp-1">

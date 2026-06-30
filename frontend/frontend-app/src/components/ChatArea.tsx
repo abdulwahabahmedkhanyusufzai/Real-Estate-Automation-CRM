@@ -165,7 +165,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   const inputPlaceholder = `Ask ${selectedModel}...`;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#f8fafc] text-slate-800 transition-colors duration-300 font-sans relative overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-[#f8fafc] text-slate-800 transition-colors duration-300 font-sans relative overflow-hidden animate-fade-in-up">
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4.5 bg-white border-b border-slate-200/80 sticky top-0 z-20 shadow-xs">
         <div className="flex items-center gap-3">
@@ -266,7 +266,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               return (
                 <div 
                   key={message.id} 
-                  className={`flex gap-4 ${isUser ? 'justify-end' : 'justify-start'}`}
+                  className={`flex gap-4 ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in-up`}
                 >
                   {/* Model avatar on left */}
                   {!isUser && (
