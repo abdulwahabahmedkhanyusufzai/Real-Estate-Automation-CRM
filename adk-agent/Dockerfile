@@ -20,4 +20,4 @@ RUN uv sync
 EXPOSE 8080
 
 # Run the application
-CMD ["uv", "run", "adk", "api_server", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uv", "run", "python", "server.py"]
