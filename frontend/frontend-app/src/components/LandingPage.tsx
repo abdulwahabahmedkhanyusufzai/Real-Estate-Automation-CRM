@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, MessageSquare, Mail, Layers, CheckCircle2, ChevronRight, Zap, Target, ShieldCheck } from 'lucide-react';
+import { Sparkles, ArrowRight, MessageSquare, Mail, Layers, ChevronRight, Zap, Target, ShieldCheck } from 'lucide-react';
 
 interface LandingPageProps {
   navigate: (path: string) => void;
@@ -10,7 +10,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
   const [playgroundInput, setPlaygroundInput] = useState(
     "Hi, looking for a 4 bed villa in dxb hills. Budget around 3m. Let me know asap."
   );
-  const [extractedData, setExtractedData] = useState({
+  const [extractedData, setExtractedData] = useState<{
+    budget: string;
+    area: string;
+    propertyType: string;
+    bedrooms: string | number;
+    urgency: string;
+  }>({
     budget: "AED 3M",
     area: "Dubai Hills",
     propertyType: "Villa",
