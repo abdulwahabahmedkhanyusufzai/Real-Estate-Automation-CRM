@@ -9,7 +9,8 @@ import {
   History, 
   Trash2,
   Sparkles,
-  Briefcase
+  Briefcase,
+  LogOut
 } from 'lucide-react';
 
 
@@ -24,7 +25,10 @@ interface SidebarProps {
   openHelpModal: () => void;
   activeView: 'chat' | 'leads' | 'settings';
   setActiveView: (view: 'chat' | 'leads' | 'settings') => void;
+  user: { id: number; username: string } | null;
+  onLogout: () => void;
 }
+
 
 export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
@@ -36,7 +40,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNewChat,
   openHelpModal,
   activeView,
-  setActiveView
+  setActiveView,
+  user,
+  onLogout
 }) => {
   const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
 
@@ -230,20 +236,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* User profile */}
         <div 
-          className={`flex items-center gap-3 hover:bg-slate-50 rounded-full transition-all duration-200 ${
-            isOpen ? 'p-2' : 'p-1 justify-center'
+          className={`flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-all duration-200 ${
+            isOpen ? 'p-2 w-full' : 'p-1 justify-center'
           }`}
         >
-          <img 
-            src="https://api.dicebear.com/7.x/bottts/svg?seed=GeminiDev" 
-            alt="User Avatar" 
-            className="w-9 h-9 rounded-full bg-emerald-500 border border-slate-200 p-0.5 object-cover"
-          />
+          <div className="flex items-center gap-3 min-w-0">
+            <img 
+              src={`https://api.dicebear.com/7.x/bottts/svg?seed=${user?.username || 'GeminiDev'}`} 
+              alt="User Avatar" 
+              className="w-9 h-9 rounded-full bg-emerald-500/10 border border-slate-200 p-0.5 object-cover shrink-0"
+            />
+            {isOpen && (
+              <div className="flex flex-col min-w-0 text-left">
+                <span className="text-xs font-bold text-slate-900 truncate">{user?.username || 'Developer'}</span>
+                <span className="text-[10px] text-slate-400 truncate">{user ? `${user.username}@pixxi.ai` : 'active_dev@workspace'}</span>
+              </div>
+            )}
+          </div>
           {isOpen && (
-            <div className="flex flex-col min-w-0 text-left">
-              <span className="text-xs font-bold text-slate-900 truncate">Developer Workspace</span>
-              <span className="text-[10px] text-slate-400 truncate">active_dev@workspace</span>
-            </div>
+            <button
+              onClick={onLogout}
+              className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-555 hover:text-rose-600 transition-colors cursor-pointer shrink-0 ml-1"
+              title="Log Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           )}
         </div>
       </div>

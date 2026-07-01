@@ -6,8 +6,9 @@ import { SettingsModal, HelpModal } from './components/Modals';
 import type { ChatSession, GeminiModel, Message, Lead } from './types';
 import { Menu, Settings } from 'lucide-react';
 import IntegrationsManager from './components/IntegrationsManager';
+import { Auth } from './components/Auth';
+import { LandingPage } from './components/LandingPage';
 
-const LOCAL_STORAGE_KEY = 'pixxi_crm_chats_v1';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -18,17 +19,56 @@ function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [activeView, setActiveView] = useState<'chat' | 'leads' | 'settings'>('leads');
 
-  // Generate / retrieve a stable user ID for session tracking
-  const [userId] = useState(() => {
-    const stored = localStorage.getItem('gemini_user_id');
-    if (stored) return stored;
-    const newId = 'web_user_' + Math.floor(Math.random() * 10000);
-    localStorage.setItem('gemini_user_id', newId);
-    return newId;
+  const [user, setUser] = useState<{ id: number; username: string } | null>(() => {
+    const stored = localStorage.getItem('pixxi_user');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        console.error('Failed to parse stored user', e);
+      }
+    }
+    return null;
   });
 
-  // Load chats from localStorage on mount
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
   useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigate = (path: string) => {
+    window.history.pushState(null, '', path);
+    setCurrentPath(path);
+  };
+
+  // Redirect logic based on auth status and current url path
+  useEffect(() => {
+    if (user) {
+      // If logged in and on auth pages, redirect to dashboard root
+      if (currentPath === '/login' || currentPath === '/register') {
+        navigate('/');
+      }
+    } else {
+      // If logged out and trying to access internal routes, redirect to landing page '/'
+      if (currentPath !== '/' && currentPath !== '/login' && currentPath !== '/register') {
+        navigate('/');
+      }
+    }
+  }, [user, currentPath]);
+
+  const userId = user ? `user_${user.username}` : '';
+  const LOCAL_STORAGE_KEY = user ? `pixxi_crm_chats_${user.username}` : 'pixxi_crm_chats_v1';
+
+
+  // Load chats from localStorage on mount/user change
+  useEffect(() => {
+    if (!user) return;
+
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (stored) {
       try {
@@ -52,6 +92,8 @@ function App() {
         setSessions(hydrated);
         if (hydrated.length > 0) {
           setCurrentSessionId(hydrated[0].id);
+        } else {
+          setCurrentSessionId(null);
         }
       } catch (e) {
         console.error('Failed to parse chat sessions', e);
@@ -77,8 +119,10 @@ function App() {
       setCurrentSessionId(seedSession.id);
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([seedSession]));
     }
+  }, [user, LOCAL_STORAGE_KEY]);
 
-    // Auto collapse sidebar on smaller screens
+  // Handle window resizing
+  useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         setSidebarOpen(false);
@@ -93,7 +137,7 @@ function App() {
 
   // Sync active sessions to backend when selected
   useEffect(() => {
-    if (currentSessionId) {
+    if (currentSessionId && userId) {
       fetch(`/api/apps/production_agent/users/${userId}/sessions/${currentSessionId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,6 +149,15 @@ function App() {
   const saveSessionsToStorage = (updatedSessions: ChatSession[]) => {
     setSessions(updatedSessions);
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedSessions));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('pixxi_user');
+    setSessions([]);
+    setCurrentSessionId(null);
+    setActiveView('leads');
+    navigate('/login');
   };
 
   const handleNewChat = () => {
@@ -358,6 +411,38 @@ Can you give me a summary profile and recommend next steps for this client?`;
     handleSendMessage(promptMessage);
   };
 
+  if (!user) {
+    if (currentPath === '/login') {
+      return (
+        <Auth
+          mode="login"
+          navigate={navigate}
+          onAuthSuccess={(authenticatedUser) => {
+            setUser(authenticatedUser);
+            localStorage.setItem('pixxi_user', JSON.stringify(authenticatedUser));
+            navigate('/');
+          }}
+        />
+      );
+    }
+    if (currentPath === '/register') {
+      return (
+        <Auth
+          mode="register"
+          navigate={navigate}
+          onAuthSuccess={(authenticatedUser) => {
+            setUser(authenticatedUser);
+            localStorage.setItem('pixxi_user', JSON.stringify(authenticatedUser));
+            navigate('/');
+          }}
+        />
+      );
+    }
+    return <LandingPage navigate={navigate} />;
+  }
+
+
+
   const currentSession = sessions.find(s => s.id === currentSessionId) || null;
 
   return (
@@ -374,7 +459,10 @@ Can you give me a summary profile and recommend next steps for this client?`;
         openHelpModal={() => setIsHelpOpen(true)}
         activeView={activeView}
         setActiveView={setActiveView}
+        user={user}
+        onLogout={handleLogout}
       />
+
 
       {/* Main panel - conditionally render Chat Area, Lead Inbox, or Integrations Settings Page */}
       {activeView === 'chat' ? (

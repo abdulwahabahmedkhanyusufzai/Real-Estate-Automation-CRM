@@ -187,7 +187,7 @@ export default function IntegrationsManager() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'channels' | 'logs' | 'apikeys')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 isActive 
                   ? 'bg-white text-[#01cb65] border border-slate-200/90 shadow-sm'

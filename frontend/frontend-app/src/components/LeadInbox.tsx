@@ -681,7 +681,7 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
                       ].map(item => (
                         <button
                           key={item.value}
-                          onClick={() => { setSortBy(item.value as any); setIsSortDropdownOpen(false); }}
+                          onClick={() => { setSortBy(item.value as 'score' | 'budget' | 'date'); setIsSortDropdownOpen(false); }}
                           className={`w-full px-3.5 py-2 text-left text-xs font-bold transition-colors cursor-pointer ${
                             sortBy === item.value ? 'bg-emerald-50 text-emerald-750 font-extrabold' : 'hover:bg-slate-50 text-slate-650'
                           }`}
@@ -1085,7 +1085,7 @@ export const LeadInbox: React.FC<LeadInboxProps> = ({
                       return (
                         <button
                           key={s}
-                          onClick={() => handleUpdateStatus(selectedLead.id, s as any)}
+                          onClick={() => handleUpdateStatus(selectedLead.id, s as 'New' | 'In Progress' | 'Contacted' | 'Closed')}
                           className={`flex-1 py-1.5 text-[10.5px] font-extrabold rounded-md transition-all cursor-pointer ${
                             isSelected 
                               ? 'bg-gradient-to-r from-[#01cb65] to-[#00aed0] text-white shadow-xs'

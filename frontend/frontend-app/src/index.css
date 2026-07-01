@@ -2,12 +2,12 @@
 
 @theme {
   --font-sans: "Outfit", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --color-gemini-bg-dark: #131314;
-  --color-gemini-panel-dark: #1e1f20;
-  --color-gemini-border-dark: #2f3032;
-  --color-gemini-text-muted: #c4c7c5;
+  --color-gemini-bg-dark: #ffffff;
+  --color-gemini-panel-dark: #f8fafc;
+  --color-gemini-border-dark: #e2e8f0;
+  --color-gemini-text-muted: #64748b;
   --color-gemini-blue: #1a73e8;
-  --color-gemini-blue-light: #8ab4f8;
+  --color-gemini-blue-light: #3b82f6;
   --color-gemini-grad-start: #4285f4;
   --color-gemini-grad-middle: #9b72cb;
   --color-gemini-grad-end: #d96570;
@@ -15,11 +15,12 @@
 
 @layer base {
   body {
-    background-color: var(--color-gemini-bg-dark);
-    color: #e3e3e3;
+    background-color: #ffffff;
+    color: #0f172a;
     font-family: var(--font-sans);
   }
 }
+
 
 /* Scrollbar styles */
 ::-webkit-scrollbar {
