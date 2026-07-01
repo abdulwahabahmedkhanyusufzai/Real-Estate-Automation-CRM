@@ -104,7 +104,47 @@ AgenticGemma/
     }
     ```
 
-### 2. Conversational Agent Runner (ADK)
+### 2. Register User
+*   **Endpoint:** `POST /api/register` (Proxied to `/register` on the backend)
+*   **Payload:**
+    ```json
+    {
+      "username": "agent_user",
+      "password": "secure_password"
+    }
+    ```
+*   **Response:**
+    ```json
+    {
+      "status": "success",
+      "user": {
+        "id": 1,
+        "username": "agent_user"
+      }
+    }
+    ```
+
+### 3. Authenticate User (Login)
+*   **Endpoint:** `POST /api/login` (Proxied to `/login` on the backend)
+*   **Payload:**
+    ```json
+    {
+      "username": "agent_user",
+      "password": "secure_password"
+    }
+    ```
+*   **Response:**
+    ```json
+    {
+      "status": "success",
+      "user": {
+        "id": 1,
+        "username": "agent_user"
+      }
+    }
+    ```
+
+### 4. Conversational Agent Runner (ADK)
 *   **Endpoint:** `POST /run` (Exposed by ADK)
 *   **Purpose:** Triggers conversational session states with the Gemma-powered assistant.
 
