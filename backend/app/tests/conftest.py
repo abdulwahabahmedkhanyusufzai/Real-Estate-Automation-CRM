@@ -7,6 +7,7 @@ os.environ["TESTING"] = "1"
 
 # Mock google auth to prevent hanging on metadata server checks during CI/CD
 import google.auth
+
 google.auth.default = MagicMock(return_value=(MagicMock(), "dummy-project"))
 
 from fastapi.testclient import TestClient  # noqa: E402
