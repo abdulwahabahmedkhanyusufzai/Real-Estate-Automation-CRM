@@ -51,12 +51,12 @@ function App() {
     if (user) {
       // If logged in and on auth pages, redirect to dashboard root
       if (currentPath === '/login' || currentPath === '/register') {
-        navigate('/');
+        Promise.resolve().then(() => navigate('/'));
       }
     } else {
       // If logged out and trying to access internal routes, redirect to landing page '/'
       if (currentPath !== '/' && currentPath !== '/login' && currentPath !== '/register') {
-        navigate('/');
+        Promise.resolve().then(() => navigate('/'));
       }
     }
   }, [user, currentPath]);
@@ -89,12 +89,14 @@ function App() {
             }))
           };
         });
-        setSessions(hydrated);
-        if (hydrated.length > 0) {
-          setCurrentSessionId(hydrated[0].id);
-        } else {
-          setCurrentSessionId(null);
-        }
+        Promise.resolve().then(() => {
+          setSessions(hydrated);
+          if (hydrated.length > 0) {
+            setCurrentSessionId(hydrated[0].id);
+          } else {
+            setCurrentSessionId(null);
+          }
+        });
       } catch (e) {
         console.error('Failed to parse chat sessions', e);
       }
@@ -115,8 +117,10 @@ function App() {
           }
         ]
       };
-      setSessions([seedSession]);
-      setCurrentSessionId(seedSession.id);
+      Promise.resolve().then(() => {
+        setSessions([seedSession]);
+        setCurrentSessionId(seedSession.id);
+      });
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([seedSession]));
     }
   }, [user, LOCAL_STORAGE_KEY]);
@@ -415,6 +419,7 @@ Can you give me a summary profile and recommend next steps for this client?`;
     if (currentPath === '/login') {
       return (
         <Auth
+          key="login"
           mode="login"
           navigate={navigate}
           onAuthSuccess={(authenticatedUser) => {
@@ -428,6 +433,7 @@ Can you give me a summary profile and recommend next steps for this client?`;
     if (currentPath === '/register') {
       return (
         <Auth
+          key="register"
           mode="register"
           navigate={navigate}
           onAuthSuccess={(authenticatedUser) => {

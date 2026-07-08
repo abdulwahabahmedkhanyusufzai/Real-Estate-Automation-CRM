@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Sparkles, Lock, User, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 
 interface AuthProps {
@@ -16,14 +16,6 @@ export const Auth: React.FC<AuthProps> = ({ mode, navigate, onAuthSuccess }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
-
-  // Clear inputs when the mode/page changes
-  useEffect(() => {
-    setError(null);
-    setUsername('');
-    setPassword('');
-    setConfirmPassword('');
-  }, [mode]);
 
   const triggerShake = () => {
     setShake(true);
@@ -79,8 +71,9 @@ export const Auth: React.FC<AuthProps> = ({ mode, navigate, onAuthSuccess }) => 
       } else {
         throw new Error('Invalid server response');
       }
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
+      setError(errorMessage);
       triggerShake();
     } finally {
       setIsLoading(false);
