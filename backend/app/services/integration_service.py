@@ -1,0 +1,129 @@
+import sqlite3
+import logging
+from typing import Dict, Any, Optional
+from app.core.database import DB_PATH
+
+logger = logging.getLogger(__name__)
+
+
+def save_user_integrations(user_id: int, data: Dict[str, Any]) -> bool:
+    """
+    Saves or updates integration credentials for a specific user ID.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # Check if integrations already exist for this user
+        cursor.execute("SELECT id FROM user_integrations WHERE user_id = ?", (user_id,))
+        exists = cursor.fetchone()
+
+        if exists:
+            # Update existing
+            cursor.execute(
+                """
+                UPDATE user_integrations
+                SET whatsapp_phone_number_id = ?,
+                    whatsapp_access_token = ?,
+                    whatsapp_verify_token = ?,
+                    imap_host = ?,
+                    imap_port = ?,
+                    imap_user = ?,
+                    imap_password = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+            """,
+                (
+                    data.get("whatsapp_phone_number_id"),
+                    data.get("whatsapp_access_token"),
+                    data.get("whatsapp_verify_token"),
+                    data.get("imap_host"),
+                    data.get("imap_port", 993),
+                    data.get("imap_user"),
+                    data.get("imap_password"),
+                    user_id,
+                ),
+            )
+        else:
+            # Insert new
+            cursor.execute(
+                """
+                INSERT INTO user_integrations (
+                    user_id, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_verify_token,
+                    imap_host, imap_port, imap_user, imap_password
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    user_id,
+                    data.get("whatsapp_phone_number_id"),
+                    data.get("whatsapp_access_token"),
+                    data.get("whatsapp_verify_token"),
+                    data.get("imap_host"),
+                    data.get("imap_port", 993),
+                    data.get("imap_user"),
+                    data.get("imap_password"),
+                ),
+            )
+
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error saving user integrations: {e}")
+        return False
+
+
+def get_user_integrations(user_id: int) -> Optional[Dict[str, Any]]:
+    """
+    Fetches the integration settings/credentials for a specific user.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT whatsapp_phone_number_id, whatsapp_access_token, whatsapp_verify_token,
+                   imap_host, imap_port, imap_user, imap_password
+            FROM user_integrations
+            WHERE user_id = ?
+        """,
+            (user_id,),
+        )
+        row = cursor.fetchone()
+        conn.close()
+
+        if row:
+            return dict(row)
+        return None
+    except Exception as e:
+        logger.error(f"Error retrieving user integrations: {e}")
+        return None
+
+
+def get_user_by_whatsapp_phone_id(phone_number_id: str) -> Optional[int]:
+    """
+    Looks up which user owns a particular WhatsApp Phone Number ID.
+    Used to route incoming Meta webhooks to the correct tenant.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT user_id FROM user_integrations
+            WHERE whatsapp_phone_number_id = ?
+        """,
+            (phone_number_id,),
+        )
+        row = cursor.fetchone()
+        conn.close()
+
+        if row:
+            return row[0]
+        return None
+    except Exception as e:
+        logger.error(f"Error mapping WhatsApp phone number to user: {e}")
+        return None

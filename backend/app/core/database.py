@@ -21,5 +21,21 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_integrations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            whatsapp_phone_number_id TEXT,
+            whatsapp_access_token TEXT,
+            whatsapp_verify_token TEXT,
+            imap_host TEXT,
+            imap_port INTEGER DEFAULT 993,
+            imap_user TEXT,
+            imap_password TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    """)
     conn.commit()
     conn.close()

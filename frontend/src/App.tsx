@@ -513,7 +513,7 @@ Can you give me a summary profile and recommend next steps for this client?`;
             </div>
           </header>
 
-          <IntegrationsManager />
+          <IntegrationsManager userId={user?.id} />
         </div>
       )}
 

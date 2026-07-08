@@ -61,7 +61,11 @@ const INITIAL_LOGS: WebhookLog[] = [
   { id: 'log-5', timestamp: '2026-06-28 17:20:10', source: 'Bayut', event: 'Webhook payload ingestion', status: 500, latency: '12ms', payload: '{"error": "Unauthorized API token signature"}' }
 ];
 
-export default function IntegrationsManager() {
+interface IntegrationsManagerProps {
+  userId?: number;
+}
+
+export default function IntegrationsManager({ userId }: IntegrationsManagerProps) {
   const [connections, setConnections] = useState({
     whatsapp: true,
     propertyFinder: false,
@@ -79,6 +83,24 @@ export default function IntegrationsManager() {
   const [logs, setLogs] = useState<WebhookLog[]>(INITIAL_LOGS);
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [apiSecretVisible, setApiSecretVisible] = useState(false);
+
+  const handleConnectWhatsApp = () => {
+    if (connections.whatsapp) {
+      setConnections({ ...connections, whatsapp: false });
+    } else {
+      const targetUserId = userId || 1;
+      window.location.href = `http://localhost:8000/api/oauth/facebook/login?user_id=${targetUserId}`;
+    }
+  };
+
+  const handleConnectEmail = () => {
+    if (connections.email) {
+      setConnections({ ...connections, email: false });
+    } else {
+      const targetUserId = userId || 1;
+      window.location.href = `http://localhost:8000/api/oauth/google/login?user_id=${targetUserId}`;
+    }
+  };
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -238,7 +260,7 @@ export default function IntegrationsManager() {
                 )}
               </div>
               <button 
-                onClick={() => setConnections({...connections, whatsapp: !connections.whatsapp})}
+                onClick={handleConnectWhatsApp}
                 className={`mt-6 w-full py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer active:scale-97 ${connections.whatsapp ? 'border border-slate-250 text-slate-600 hover:bg-slate-50' : 'bg-[#01cb65] text-white hover:bg-emerald-600 shadow-xs'}`}
               >
                 {connections.whatsapp ? 'Disconnect' : 'Connect Channel'}
@@ -380,7 +402,7 @@ export default function IntegrationsManager() {
               
               {!connections.email && (
                 <button 
-                  onClick={() => setConnections({...connections, email: true})}
+                  onClick={handleConnectEmail}
                   className="mt-6 w-full py-2 rounded-xl text-xs font-bold bg-[#01cb65] text-white hover:bg-emerald-600 shadow-xs transition-all duration-200 cursor-pointer active:scale-97"
                 >
                   Authenticate Mailbox

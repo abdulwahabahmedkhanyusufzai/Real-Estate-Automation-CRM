@@ -1,15 +1,17 @@
 services:
   gemma-backend:
-    build:
-      context: ./ollama-backend
-    image: local-gemma-backend
+    image: ollama/ollama:latest
     container_name: production-gemma-backend
     restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
-      # Critical for your 2GB server to survive loading the model
       - OLLAMA_NUM_CTX=512
+      - OLLAMA_HOST=0.0.0.0:8080
+      - OLLAMA_DEBUG=false
+      - OLLAMA_KEEP_ALIVE=-1
+    volumes:
+      - ./ollama-models:/root/.ollama
 
   backend:
     build:

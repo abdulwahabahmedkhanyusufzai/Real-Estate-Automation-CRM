@@ -22,3 +22,9 @@ dev = [
 [tool.pytest.ini_options]
 addopts = "--ignore=elasticity_test.py"
 pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::starlette.exceptions.StarletteDeprecationWarning"
+]
