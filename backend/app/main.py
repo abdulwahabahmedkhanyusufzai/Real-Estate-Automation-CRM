@@ -9,6 +9,7 @@ from app.routes.webhooks import router as webhooks_router
 from app.routes.oauth import router as oauth_router
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.rate_limiter import RateLimitMiddleware
 
 # Locate agents directory relative to this file
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -20,6 +21,9 @@ init_db()
 
 # Create FastAPI app with ADK integration
 app: FastAPI = get_fast_api_app(**app_args)
+
+# Register rate limiter middleware (60 calls per 60 seconds per IP)
+app.add_middleware(RateLimitMiddleware, calls=60, period=60)
 
 app.title = settings.PROJECT_NAME
 app.description = settings.PROJECT_DESCRIPTION

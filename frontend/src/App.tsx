@@ -142,11 +142,20 @@ function App() {
   // Sync active sessions to backend when selected
   useEffect(() => {
     if (currentSessionId && userId) {
-      fetch(`/api/apps/production_agent/users/${userId}/sessions/${currentSessionId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ state: { user_type: "web_ui_user" } })
-      }).catch(err => console.error('Error auto-initializing session:', err));
+      const sessionUrl = `/api/apps/production_agent/users/${userId}/sessions/${currentSessionId}`;
+      fetch(sessionUrl)
+        .then(res => {
+          if (res.status === 404) {
+            // Session does not exist, initialize it
+            return fetch(sessionUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ state: { user_type: "web_ui_user" } })
+            });
+          }
+          return res;
+        })
+        .catch(err => console.error('Error auto-initializing session:', err));
     }
   }, [currentSessionId, userId]);
 
