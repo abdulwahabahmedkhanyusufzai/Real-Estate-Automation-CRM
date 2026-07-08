@@ -89,7 +89,7 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
       setConnections({ ...connections, whatsapp: false });
     } else {
       const targetUserId = userId || 1;
-      window.location.href = `http://localhost:8000/api/oauth/facebook/login?user_id=${targetUserId}`;
+      window.location.href = `/api/oauth/facebook/login?user_id=${targetUserId}`;
     }
   };
 
@@ -98,7 +98,7 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
       setConnections({ ...connections, email: false });
     } else {
       const targetUserId = userId || 1;
-      window.location.href = `http://localhost:8000/api/oauth/google/login?user_id=${targetUserId}`;
+      window.location.href = `/api/oauth/google/login?user_id=${targetUserId}`;
     }
   };
 
