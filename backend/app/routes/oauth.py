@@ -188,12 +188,44 @@ async def facebook_callback(code: str = Query(...), state: str = Query(...)):
                             phone_number_id = phones[0].get("id")
 
             # Save to user integrations database
+            verify_token = f"verify_user_{user_id}"
             config = {
                 "whatsapp_phone_number_id": phone_number_id,
                 "whatsapp_access_token": long_token,
-                "whatsapp_verify_token": f"verify_user_{user_id}",
+                "whatsapp_verify_token": verify_token,
             }
             save_user_integrations(user_id, config)
+
+            # --- AUTO WEBHOOK REGISTRATION ---
+            # Programmatically register our webhook with Meta so the owner
+            # never has to touch the Meta Developer Dashboard manually.
+            if phone_number_id:
+                webhook_url = (
+                    os.getenv("WEBHOOK_BASE_URL", FRONTEND_URL).rstrip("/")
+                    + "/webhooks/whatsapp"
+                )
+                try:
+                    subscribe_resp = await client.post(
+                        f"https://graph.facebook.com/v20.0/{phone_number_id}/subscribed_apps",
+                        headers=headers,
+                        json={
+                            "callback_url": webhook_url,
+                            "verify_token": verify_token,
+                            "subscribed_fields": ["messages"],
+                        },
+                    )
+                    if subscribe_resp.status_code == 200:
+                        import logging
+
+                        logging.getLogger(__name__).info(
+                            f"WhatsApp webhook auto-registered at {webhook_url} for phone_id={phone_number_id}"
+                        )
+                except Exception as sub_err:
+                    import logging
+
+                    logging.getLogger(__name__).warning(
+                        f"Auto webhook registration failed (non-fatal): {sub_err}"
+                    )
 
             return RedirectResponse(
                 url=f"{FRONTEND_URL}/integrations?status=success&platform=facebook"

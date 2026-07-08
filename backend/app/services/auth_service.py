@@ -1,6 +1,7 @@
-import sqlite3
 import hashlib
+import hmac
 import os
+import sqlite3
 from typing import Dict, Any, Optional
 from app.core.database import DB_PATH
 
@@ -18,9 +19,11 @@ def hash_password(password: str, salt: Optional[str] = None) -> tuple[str, str]:
 
 
 def verify_password(password: str, password_hash: str, salt: str) -> bool:
-    """Verifies a password against a hash and salt."""
+    """Verifies a password against a hash and salt using constant-time comparison."""
     key, _ = hash_password(password, salt)
-    return key == password_hash
+    # hmac.compare_digest prevents timing oracle attacks — comparison takes
+    # the same time regardless of how many characters match.
+    return hmac.compare_digest(key, password_hash)
 
 
 def register_user(username: str, password: str) -> Dict[str, Any]:
@@ -60,6 +63,10 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     conn.close()
 
     if not row:
+        # Run a dummy hash so response time is identical whether the user
+        # exists or not. Without this, an attacker can enumerate valid
+        # usernames by measuring which requests return faster (no DB hit).
+        hash_password(password)
         return None
 
     user_id, username, password_hash, salt = row

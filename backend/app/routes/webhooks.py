@@ -1,6 +1,10 @@
-from fastapi import APIRouter, Query, HTTPException, Request
+from fastapi import APIRouter, Query, HTTPException, Request, BackgroundTasks
 from typing import Dict, Any, List, Optional
-from app.integrations.whatsapp import verify_whatsapp_webhook, parse_whatsapp_message
+from app.integrations.whatsapp import (
+    verify_whatsapp_webhook,
+    parse_whatsapp_message,
+    send_whatsapp_message,
+)
 from app.integrations.email_imap import fetch_unread_emails
 from app.integrations.portal_webhook import parse_portal_webhook
 from app.services.lead_service import extract_omnichannel_lead
@@ -8,8 +12,28 @@ from app.services.integration_service import (
     save_user_integrations,
     get_user_integrations,
     get_user_by_whatsapp_phone_id,
+    is_whatsapp_message_processed,
+    mark_whatsapp_message_processed,
+    flag_whatsapp_disconnected,
 )
 from pydantic import BaseModel
+import logging
+import json
+import time
+
+logger = logging.getLogger(__name__)
+
+
+def _log(level: str, event: str, **kwargs) -> None:
+    """
+    Emits a structured JSON log line so that log-aggregation tools
+    (Datadog, CloudWatch, Loki) can parse fields without regex.
+    Every call produces one JSON object per line, e.g.:
+      {"ts": 1720..., "level": "INFO", "event": "whatsapp.received", "message_id": "wamid.abc"}
+    """
+    record = {"ts": time.time(), "level": level.upper(), "event": event, **kwargs}
+    getattr(logger, level.lower())(json.dumps(record))
+
 
 router = APIRouter()
 
@@ -70,34 +94,112 @@ def get_whatsapp_webhook(
 
 
 @router.post("/webhooks/whatsapp")
-async def post_whatsapp_webhook(request: Request):
+async def post_whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
     """
-    Receives incoming text messages from clients via WhatsApp API,
-    automatically qualifies them using the Gemma lead-extraction service,
-    and attributes them to the correct user who owns this phone connection.
+    Receives incoming text messages from clients via WhatsApp API.
+    Returns 200 OK to Meta immediately, then processes the lead in the background.
+    This prevents Meta from retrying the webhook due to slow AI processing.
     """
     payload = await request.json()
     message_data = parse_whatsapp_message(payload)
 
     if not message_data:
+        _log("info", "whatsapp.ignored", reason="no_valid_text_message")
         return {"status": "ignored", "reason": "No valid text message found"}
 
-    phone_number_id = message_data.get("phone_number_id")
-    user_id = None
-    if phone_number_id:
-        user_id = get_user_by_whatsapp_phone_id(phone_number_id)
+    # --- IDEMPOTENCY CHECK ---
+    # Extract message_id from the raw payload to prevent duplicate processing
+    try:
+        message_id = payload["entry"][0]["changes"][0]["value"]["messages"][0]["id"]
+    except (KeyError, IndexError):
+        message_id = None
 
-    # Extract details using our omnichannel Gemma qualifier engine
-    qualified_data = extract_omnichannel_lead(message_data["message"], "WhatsApp")
+    if message_id and is_whatsapp_message_processed(message_id):
+        _log(
+            "info",
+            "whatsapp.duplicate_discarded",
+            message_id=message_id,
+            outcome="ignored",
+            reason="idempotency_key_already_seen",
+        )
+        return {"status": "ignored", "reason": "Duplicate message already processed"}
 
-    return {
-        "status": "success",
-        "user_id": user_id,  # Associated user context
-        "sender": message_data["name"],
-        "phone": message_data["phone"],
-        "raw_message": message_data["message"],
-        "qualified_lead": qualified_data,
-    }
+    # Mark as processed immediately before background task starts
+    if message_id:
+        mark_whatsapp_message_processed(message_id)
+
+    _log(
+        "info",
+        "whatsapp.received",
+        message_id=message_id,
+        sender=message_data.get("name"),
+        phone=message_data.get("phone"),
+        phone_number_id=message_data.get("phone_number_id"),
+    )
+
+    # --- BACKGROUND PROCESSING ---
+    # Offload AI qualification + reply to background so Meta gets 200 OK instantly
+    async def process_lead_background():
+        phone_number_id = message_data.get("phone_number_id")
+        user_id = None
+        user_config = None
+
+        if phone_number_id:
+            user_id = get_user_by_whatsapp_phone_id(phone_number_id)
+            if user_id:
+                user_config = get_user_integrations(user_id)
+
+        # Qualify the lead using Gemma
+        qualified_data = extract_omnichannel_lead(message_data["message"], "WhatsApp")
+
+        _log(
+            "info",
+            "whatsapp.lead_qualified",
+            message_id=message_id,
+            user_id=user_id,
+            sender=message_data.get("name"),
+            phone=message_data.get("phone"),
+            budget=qualified_data.get("budget"),
+            area=qualified_data.get("area"),
+            urgency=qualified_data.get("urgency"),
+        )
+
+        # --- SEND REPLY ---
+        if user_config:
+            access_token = user_config.get("whatsapp_access_token")
+            success = await send_whatsapp_message(
+                to_phone=message_data["phone"],
+                text=f"Thank you {message_data['name']}! We've received your inquiry and our team will be in touch shortly.",
+                access_token=access_token,
+                phone_number_id=phone_number_id,
+            )
+            if success:
+                _log(
+                    "info",
+                    "whatsapp.reply_sent",
+                    message_id=message_id,
+                    user_id=user_id,
+                    to_phone=message_data["phone"],
+                    outcome="success",
+                )
+            else:
+                # --- TOKEN REVOCATION HANDLING ---
+                # Auth failure: flag integration as disconnected for UI alert
+                flag_whatsapp_disconnected(user_id)
+                _log(
+                    "warning",
+                    "whatsapp.auth_expired",
+                    message_id=message_id,
+                    user_id=user_id,
+                    phone_number_id=phone_number_id,
+                    outcome="integration_flagged_disconnected",
+                    action_required="user_must_reconnect_whatsapp",
+                )
+
+    background_tasks.add_task(process_lead_background)
+
+    # Return 200 OK to Meta immediately (within the required timeout)
+    return {"status": "received"}
 
 
 @router.post("/webhooks/portal")

@@ -127,3 +127,68 @@ def get_user_by_whatsapp_phone_id(phone_number_id: str) -> Optional[int]:
     except Exception as e:
         logger.error(f"Error mapping WhatsApp phone number to user: {e}")
         return None
+
+
+def is_whatsapp_message_processed(message_id: str) -> bool:
+    """
+    Idempotency check: returns True if this WhatsApp message_id was
+    already processed. Prevents duplicate lead qualification and replies
+    when Meta retries webhook delivery after network glitches.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT 1 FROM processed_whatsapp_messages WHERE message_id = ?",
+            (message_id,),
+        )
+        result = cursor.fetchone()
+        conn.close()
+        return result is not None
+    except Exception as e:
+        logger.error(f"Error checking idempotency for message {message_id}: {e}")
+        return False
+
+
+def mark_whatsapp_message_processed(message_id: str) -> None:
+    """
+    Records a WhatsApp message_id as processed so future duplicate
+    webhook deliveries from Meta are safely ignored.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT OR IGNORE INTO processed_whatsapp_messages (message_id) VALUES (?)",
+            (message_id,),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error marking message {message_id} as processed: {e}")
+
+
+def flag_whatsapp_disconnected(user_id: int) -> None:
+    """
+    Token revocation handler: flags a user's WhatsApp integration as
+    disconnected (e.g. when Meta returns 401 Unauthorized).
+    The frontend will show 'Disconnected' status and prompt re-authentication.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE user_integrations
+            SET whatsapp_disconnected = 1, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+            """,
+            (user_id,),
+        )
+        conn.commit()
+        conn.close()
+        logger.warning(
+            f"WhatsApp integration flagged as disconnected for user {user_id}"
+        )
+    except Exception as e:
+        logger.error(f"Error flagging WhatsApp disconnected for user {user_id}: {e}")

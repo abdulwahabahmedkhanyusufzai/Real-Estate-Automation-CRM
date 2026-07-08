@@ -7,11 +7,14 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
+# Auth endpoints that need a tighter brute-force limit (10 per minute per IP)
+_AUTH_PATHS = {"/login", "/register"}
+
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, calls: int = 100, period: int = 60):
         """
-        Rate limiter middleware using a sliding window counter.
+        General rate limiter middleware using a sliding window counter.
         Defaults to 100 calls per 60 seconds per IP address.
         """
         super().__init__(app)
@@ -44,6 +47,52 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     status_code=429,
                     content={
                         "detail": "Too many requests. Rate limit exceeded. Please try again later."
+                    },
+                )
+            self.requests[client_ip].append(now)
+
+        return await call_next(request)
+
+
+class BruteForceProtectMiddleware(BaseHTTPMiddleware):
+    """
+    Tighter rate limiter applied exclusively to authentication endpoints.
+    Defaults to 10 attempts per 60 seconds per IP — stops credential-stuffing
+    and password-spray attacks without affecting general API traffic.
+    This runs in addition to (not instead of) the general RateLimitMiddleware.
+    """
+
+    def __init__(self, app, calls: int = 10, period: int = 60):
+        super().__init__(app)
+        self.calls = calls
+        self.period = period
+        self.requests = defaultdict(list)
+        self.lock = threading.Lock()
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        path = request.url.path
+
+        # Only apply to auth paths
+        if path not in _AUTH_PATHS:
+            return await call_next(request)
+
+        # Bypass during unit tests
+        if os.getenv("TESTING") == "1" and not request.headers.get("X-Test-Rate-Limit"):
+            return await call_next(request)
+
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.time()
+
+        with self.lock:
+            timestamps = self.requests[client_ip]
+            valid_timestamps = [t for t in timestamps if now - t < self.period]
+            self.requests[client_ip] = valid_timestamps
+
+            if len(valid_timestamps) >= self.calls:
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "detail": "Too many login attempts. Please wait 60 seconds before trying again."
                     },
                 )
             self.requests[client_ip].append(now)

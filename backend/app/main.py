@@ -7,9 +7,10 @@ from app.routes.auth import router as auth_router
 from app.routes.leads import router as leads_router
 from app.routes.webhooks import router as webhooks_router
 from app.routes.oauth import router as oauth_router
+from app.routes.admin import router as admin_router
 from app.core.config import settings
 from app.core.database import init_db
-from app.core.rate_limiter import RateLimitMiddleware
+from app.core.rate_limiter import RateLimitMiddleware, BruteForceProtectMiddleware
 
 # Locate agents directory relative to this file
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -22,8 +23,13 @@ init_db()
 # Create FastAPI app with ADK integration
 app: FastAPI = get_fast_api_app(**app_args)
 
-# Register rate limiter middleware (60 calls per 60 seconds per IP)
-app.add_middleware(RateLimitMiddleware, calls=60, period=60)
+# Middleware registration order matters in Starlette:
+# The LAST registered middleware runs FIRST (innermost = last added).
+# We want BruteForce to run before the general limiter for auth paths.
+app.add_middleware(RateLimitMiddleware, calls=60, period=60)  # 60 req/min general
+app.add_middleware(
+    BruteForceProtectMiddleware, calls=10, period=60
+)  # 10 req/min on /login + /register
 
 app.title = settings.PROJECT_NAME
 app.description = settings.PROJECT_DESCRIPTION
@@ -34,6 +40,7 @@ app.include_router(auth_router)
 app.include_router(leads_router)
 app.include_router(webhooks_router)
 app.include_router(oauth_router)
+app.include_router(admin_router)
 
 
 @app.get("/health")
