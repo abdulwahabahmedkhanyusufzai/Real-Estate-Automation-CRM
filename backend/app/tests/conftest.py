@@ -9,9 +9,9 @@ os.environ["TESTING"] = "1"
 import google.auth
 google.auth.default = MagicMock(return_value=(MagicMock(), "dummy-project"))
 
-from fastapi.testclient import TestClient
-from app.main import app
-from app.core.database import init_db, DB_PATH
+from fastapi.testclient import TestClient  # noqa: E402
+from app.main import app  # noqa: E402
+from app.core.database import init_db, DB_PATH  # noqa: E402
 
 
 @pytest.fixture(scope="session", autouse=True)
