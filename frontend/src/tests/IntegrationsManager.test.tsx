@@ -6,13 +6,16 @@ describe('IntegrationsManager Component', () => {
   const originalLocation = window.location;
 
   beforeEach(() => {
-    // Mock window.location.href assignment
-    delete (window as any).location;
-    window.location = { ...originalLocation, href: '' } as any;
+    vi.stubGlobal('location', {
+      ...originalLocation,
+      href: '',
+      assign: vi.fn(),
+      replace: vi.fn()
+    });
   });
 
   afterEach(() => {
-    window.location = originalLocation;
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
