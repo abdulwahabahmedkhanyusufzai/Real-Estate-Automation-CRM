@@ -248,9 +248,9 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
                 
                 {connections.whatsapp && (
                   <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-between transition-all duration-300 group-hover:bg-slate-100/50">
-                    <code className="text-[10px] text-slate-700 font-mono truncate mr-2 select-all">https://n8n.pixxi.ai/webhook/wa?id=ag_771</code>
+                    <code className="text-[10px] text-slate-700 font-mono truncate mr-2 select-all">{`${window.location.origin}/webhooks/whatsapp`}</code>
                     <button 
-                      onClick={() => handleCopy("https://n8n.pixxi.ai/webhook/wa?id=ag_771", "whatsapp")}
+                      onClick={() => handleCopy(`${window.location.origin}/webhooks/whatsapp`, "whatsapp")}
                       className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded-md transition cursor-pointer active:scale-90"
                       title="Copy webhook URL"
                     >
@@ -285,9 +285,9 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
                 
                 {connections.propertyFinder && (
                   <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-between transition-all duration-300 group-hover:bg-slate-100/50">
-                    <code className="text-[10px] text-slate-700 font-mono truncate mr-2 select-all">https://n8n.pixxi.ai/webhook/pf?id=ag_771</code>
+                    <code className="text-[10px] text-slate-700 font-mono truncate mr-2 select-all">{`${window.location.origin}/webhooks/portal`}</code>
                     <button 
-                      onClick={() => handleCopy("https://n8n.pixxi.ai/webhook/pf?id=ag_771", "pf")}
+                      onClick={() => handleCopy(`${window.location.origin}/webhooks/portal`, "pf")}
                       className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded-md transition cursor-pointer active:scale-90"
                       title="Copy webhook URL"
                     >
@@ -322,9 +322,9 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
                 
                 {connections.bayut && (
                   <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-between transition-all duration-300 group-hover:bg-slate-100/50">
-                    <code className="text-[10px] text-slate-700 font-mono truncate mr-2 select-all">https://n8n.pixxi.ai/webhook/bayut?id=ag_771</code>
+                    <code className="text-[10px] text-slate-700 font-mono truncate mr-2 select-all">{`${window.location.origin}/webhooks/portal`}</code>
                     <button 
-                      onClick={() => handleCopy("https://n8n.pixxi.ai/webhook/bayut?id=ag_771", "bayut")}
+                      onClick={() => handleCopy(`${window.location.origin}/webhooks/portal`, "bayut")}
                       className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded-md transition cursor-pointer active:scale-90"
                       title="Copy webhook URL"
                     >
