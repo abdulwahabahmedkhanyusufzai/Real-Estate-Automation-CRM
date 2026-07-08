@@ -1,7 +1,8 @@
 from app.services.lead_service import (
     get_system_prompt_by_source,
-    extract_omnichannel_lead
+    extract_omnichannel_lead,
 )
+
 
 def test_system_prompt_generation():
     prompt_whatsapp = get_system_prompt_by_source("WhatsApp")
@@ -17,20 +18,22 @@ def test_system_prompt_generation():
     prompt_default = get_system_prompt_by_source("Other Source")
     assert "elite real estate" in prompt_default
 
+
 def test_extract_whatsapp_lead():
     message = "looking for 4 bed villa in dxb hills budget 3m urgent"
     extracted = extract_omnichannel_lead(message, "WhatsApp")
-    
+
     assert extracted["budget"] == "AED 3M"
     assert extracted["area"] == "Dubai Hills"
     assert extracted["property_type"] == "Villa"
     assert extracted["bedrooms"] == 4
     assert extracted["urgency"] == "High"
 
+
 def test_extract_empty_lead():
     message = "hello there"
     extracted = extract_omnichannel_lead(message, "Website / Dribbble Form")
-    
+
     assert extracted["budget"] == "Not Specified"
     assert extracted["area"] == "Not Specified"
     assert extracted["property_type"] == "Not Specified"

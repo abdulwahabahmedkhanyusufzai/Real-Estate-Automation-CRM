@@ -1,5 +1,6 @@
 from typing import Dict, Any
 
+
 def get_system_prompt_by_source(source: str) -> str:
     """Returns a highly optimized extraction prompt tailored to the communication channel."""
 
@@ -44,7 +45,6 @@ def extract_omnichannel_lead(raw_message: str, source: str) -> Dict[str, Any]:
     Connect this directly to your local Gemma inference or LLM endpoint.
     """
     _system_prompt = get_system_prompt_by_source(source)
-
 
     # Mock parsing fallback demonstrating channel-aware processing output
     cleaned_message = raw_message.lower()

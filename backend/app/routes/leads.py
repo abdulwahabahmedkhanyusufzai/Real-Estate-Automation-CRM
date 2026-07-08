@@ -4,6 +4,7 @@ from app.services.lead_service import extract_omnichannel_lead
 
 router = APIRouter()
 
+
 @router.post("/api/v1/qualify-lead")
 async def qualify_lead(payload: LeadPayload):
     try:

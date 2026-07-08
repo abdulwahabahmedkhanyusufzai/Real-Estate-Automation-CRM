@@ -7,6 +7,7 @@ if os.getenv("TESTING") == "1":
 else:
     DB_PATH = os.path.join(BASE_DIR, "users.db")
 
+
 def init_db():
     """Initializes the database schema for users if it doesn't exist."""
     conn = sqlite3.connect(DB_PATH)

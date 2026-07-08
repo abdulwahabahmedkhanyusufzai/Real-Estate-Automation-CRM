@@ -4,6 +4,7 @@ from app.services.auth_service import register_user, authenticate_user
 
 router = APIRouter()
 
+
 @router.post("/register")
 async def api_register(payload: AuthPayload):
     try:

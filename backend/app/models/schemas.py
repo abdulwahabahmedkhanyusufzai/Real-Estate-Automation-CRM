@@ -1,8 +1,10 @@
 from pydantic import BaseModel
 
+
 class AuthPayload(BaseModel):
     username: str
     password: str
+
 
 class LeadPayload(BaseModel):
     lead_id: int

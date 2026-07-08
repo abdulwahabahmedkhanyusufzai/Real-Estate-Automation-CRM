@@ -25,9 +25,11 @@ app.version = settings.VERSION
 app.include_router(auth_router)
 app.include_router(leads_router)
 
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "production-adk-agent"}
+
 
 @app.get("/")
 def root():
