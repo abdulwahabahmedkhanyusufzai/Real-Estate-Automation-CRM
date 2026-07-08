@@ -11,11 +11,11 @@ services:
       # Critical for your 2GB server to survive loading the model
       - OLLAMA_NUM_CTX=512
 
-  adk-agent:
+  backend:
     build:
-      context: ./adk-agent
-    image: local-adk-agent
-    container_name: production-adk-agent
+      context: ./backend
+    image: local-backend
+    container_name: production-backend
     restart: unless-stopped
     ports:
       - "8000:8080"
@@ -30,7 +30,7 @@ services:
       - gemma-backend
    
   frontend:
-    # Builds the React app under ./frontend/frontend-app and serves via Nginx
+    # Builds the React app under ./frontend and serves via Nginx
     build:
       context: ./frontend
     image: local-frontend
@@ -39,4 +39,4 @@ services:
     ports:
       - "8081:80"  # Exposes the UI to the public internet on standard port 80
     depends_on:
-      - adk-agent
+      - backend

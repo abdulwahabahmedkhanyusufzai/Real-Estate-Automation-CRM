@@ -1,102 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>pixxi CRM AI — Dubai Real Estate Lead Qualification</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #ffffff; color: #1e293b; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        #chat-box { width: 100%; max-width: 600px; height: 60vh; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; overflow-y: auto; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); }
-        .message { margin-bottom: 15px; padding: 10px; border-radius: 5px; max-width: 80%; line-height: 1.4; }
-        .user { background: #89b4fa; color: #11111b; align-self: flex-end; margin-left: auto; }
-        .agent { background: #e2e8f0; color: #1e293b; align-self: flex-start; margin-right: auto; }
-        .input-area { width: 100%; max-width: 640px; display: flex; gap: 10px; }
-        input { flex-grow: 1; padding: 15px; border-radius: 5px; border: 1px solid #cbd5e1; background: #f1f5f9; color: #1e293b; font-size: 16px; outline: none;}
-        button { padding: 15px 25px; border-radius: 5px; border: none; background: #10b981; color: #ffffff; font-weight: bold; cursor: pointer; transition: 0.2s;}
-        button:hover { background: #059669; }
-    </style>
-</head>
-<body>
-    <h2>pixxi CRM AI 🏢</h2>
-    <div id="chat-box"></div>
-    <div class="input-area">
-        <input type="text" id="user-input" placeholder="Ask about leads or properties..." onkeypress="if(event.key === 'Enter') sendMessage()">
-        <button onclick="sendMessage()">Send</button>
-    </div>
-
-    <script>
-        const userId = "web_user_" + Math.floor(Math.random() * 10000);
-        const sessionId = "session_" + Math.floor(Math.random() * 10000);
-        const chatBox = document.getElementById('chat-box');
-
-        // Initialize Session on Load
-        async function initSession() {
-            await fetch(`/api/apps/production_agent/users/${userId}/sessions/${sessionId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ state: { user_type: "web_ui_user" } })
-            });
-            appendMessage('agent', "Hi there! I'm pixxi CRM AI, your real estate qualification assistant. How can I help you manage your Dubai property leads today? 🏢");
-        }
-
-        function appendMessage(role, text) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${role}`;
-            msgDiv.innerText = text;
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('user-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            appendMessage('user', text);
-            input.value = '';
-            
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'message agent';
-            typingDiv.innerText = 'Thinking... 🤔';
-            chatBox.appendChild(typingDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            try {
-                const response = await fetch('/api/run', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        app_name: "production_agent",
-                        user_id: userId,
-                        session_id: sessionId,
-                        new_message: { role: "user", parts: [{ text: text }] }
-                    })
-                });
-                
-                const data = await response.json();
-                chatBox.removeChild(typingDiv);
-                
-                // Extract response based on standard ADK output schema
-                let agentReply = "Sorry, I couldn't understand the format.";
-                
-                // Parse the specific ADK 2.2.0 event structure
-                if (Array.isArray(data)) {
-                    // If the API returns an array of events, grab the last one
-                    const lastEvent = data[data.length - 1];
-                    if (lastEvent.content && lastEvent.content.parts) {
-                        agentReply = lastEvent.content.parts[0].text;
-                    }
-                } else if (data.content && data.content.parts) {
-                    // If the API returns the exact single object you provided
-                    agentReply = data.content.parts[0].text;
-                }
-
-                appendMessage('agent', agentReply);
-            } catch (error) {
-                chatBox.removeChild(typingDiv);
-                appendMessage('agent', 'Sorry, I lost connection to the server! 🔌');
-            }
-        }
-
-        initSession();
-    </script>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pixxi CRM — Dubai AI Real Estate Lead Qualification</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="description" content="A premium, production-grade AI CRM for Dubai Real Estate. Instantly qualify WhatsApp leads, email queries, and property portal listings using advanced LLM reasoning." />
+  </head>
+  <body class="bg-white text-slate-800 antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
+

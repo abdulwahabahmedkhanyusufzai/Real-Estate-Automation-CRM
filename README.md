@@ -49,8 +49,8 @@ The application is structured as a multi-container microservice system orchestra
 ```
 
 1.  **Gemma Backend (`ollama-backend/`)**: Containerizes the Ollama server to pull and serve `gemma3:270m` model locally.
-2.  **ADK Agent (`adk-agent/`)**: FastAPI-based server integrating Google's Agent Development Kit (ADK) and LiteLLM to coordinate conversation flows, expose API endpoints, and execute channel-aware prompt tuning.
-3.  **Frontend (`frontend/`)**: Static UI server powered by Nginx serving the `pixxi CRM AI` web interface.
+2.  **Backend Service (`backend/`)**: FastAPI-based server integrating Google's Agent Development Kit (ADK) and LiteLLM to coordinate conversation flows, expose API endpoints, and execute channel-aware prompt tuning.
+3.  **Frontend (`frontend/`)**: Static UI server powered by Nginx serving the `pixxi CRM AI` web interface (Vite + React + TypeScript).
 
 ---
 
@@ -60,20 +60,49 @@ The application is structured as a multi-container microservice system orchestra
 AgenticGemma/
 ├── README.md                    # This description file
 ├── docker-compose.yml           # Multi-container orchestration config
+├── .gitignore                   # Global git exclusion patterns
 ├── ollama-backend/              # Ollama server configuration
 │   └── Dockerfile               # Backend container recipe
-├── frontend/                    # Web UI client
-│   ├── index.html               # Lead qualification chat screen
+├── frontend/                    # Web UI client (Vite + React + TS)
+│   ├── index.html               # React app entry template
 │   ├── nginx.conf               # Nginx server configuration
-│   └── Dockerfile               # Frontend container recipe
-└── adk-agent/                   # Agent API and Logic
+│   ├── Dockerfile               # Frontend container recipe
+│   ├── package.json             # NPM dependencies & scripts
+│   ├── vite.config.ts           # Vite and Vitest configuration
+│   ├── src/                     # React source files (components, styles, hooks)
+│   └── src/tests/               # Frontend test suites (Vitest + React Testing Library)
+│       ├── SuggestionCards.test.tsx
+│       └── MessageContent.test.tsx
+└── backend/                     # Agent API and Logic
     ├── pyproject.toml           # Python package dependencies
-    ├── main.py                  # Primary FastAPI router
+    ├── main.py                  # Compatibility entrypoint
     ├── server.py                # ADK application server launcher
-    ├── agents.py                # Omnichannel lead qualification rules
     ├── elasticity_test.py       # Locust load-testing script
-    └── production_agent/        # Subagent modules
-        └── agent.py             # LiteLLM connection setup for Gemma
+    └── app/                     # Packaged Backend Application
+        ├── __init__.py          # Package initialization
+        ├── main.py              # Main FastAPI application router and setup
+        ├── core/                # Core configurations
+        │   ├── config.py        # Environment variables & settings config
+        │   └── database.py      # SQLite database initialization
+        ├── models/              # Pydantic data schemas
+        │   └── schemas.py       # Request and response payloads
+        ├── routes/              # FastAPI Route controllers
+        │   ├── auth.py          # /login & /register endpoints
+        │   └── leads.py         # /api/v1/qualify-lead endpoint
+        ├── services/            # Business & helper logic
+        │   ├── auth_service.py  # User authentication & hashing service
+        │   └── lead_service.py  # Omnichannel lead extraction engine
+        ├── agents/              # ADK Conversational Agents
+        │   └── production_agent/
+        │       └── agent.py     # LiteLLM connection setup for Gemma
+        └── tests/               # Backend Pytest test suite
+            ├── conftest.py      # Test database & client setup
+            ├── routes/          # API route endpoint tests
+            │   ├── test_auth.py
+            │   └── test_leads.py
+            └── services/        # Service logic unit tests
+                ├── test_auth_service.py
+                └── test_lead_service.py
 ```
 
 ---
