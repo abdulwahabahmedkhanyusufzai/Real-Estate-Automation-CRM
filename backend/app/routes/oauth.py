@@ -5,19 +5,19 @@ import httpx
 import urllib.parse
 from app.services.integration_service import save_user_integrations
 
-router = APIRouter(prefix="/api/oauth", tags=["OAuth"])
+router = APIRouter(prefix="/oauth", tags=["OAuth"])
 
 # Configuration (normally loaded from env)
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "dummy_google_client_id")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "dummy_google_client_secret")
 GOOGLE_REDIRECT_URI = os.getenv(
-    "GOOGLE_REDIRECT_URI", "http://localhost:8000/api/oauth/google/callback"
+    "GOOGLE_REDIRECT_URI", "http://localhost:8000/oauth/google/callback"
 )
 
 FB_CLIENT_ID = os.getenv("FACEBOOK_CLIENT_ID", "dummy_fb_client_id")
 FB_CLIENT_SECRET = os.getenv("FACEBOOK_CLIENT_SECRET", "dummy_fb_client_secret")
 FB_REDIRECT_URI = os.getenv(
-    "FACEBOOK_REDIRECT_URI", "http://localhost:8000/api/oauth/facebook/callback"
+    "FACEBOOK_REDIRECT_URI", "http://localhost:8000/oauth/facebook/callback"
 )
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")

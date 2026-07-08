@@ -103,7 +103,7 @@ def test_email_sync_route(mock_fetch, client):
         }
     ]
 
-    response = client.post("/api/integrations/email/sync")
+    response = client.post("/integrations/email/sync")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "success"
@@ -122,12 +122,12 @@ def test_save_and_get_integration_config(client):
         "imap_user": "user@example.com",
         "imap_password": "my-password",
     }
-    response = client.post("/api/integrations", json=payload)
+    response = client.post("/integrations", json=payload)
     assert response.status_code == 200
     assert response.json()["status"] == "success"
 
     # Get config
-    response = client.get("/api/integrations/99")
+    response = client.get("/integrations/99")
     assert response.status_code == 200
     config = response.json()["config"]
     assert config["whatsapp_phone_number_id"] == "wa-99"
@@ -142,7 +142,7 @@ def test_whatsapp_webhook_routing_to_user(client):
         "whatsapp_phone_number_id": "tenant-phone-id-777",
         "whatsapp_access_token": "token-100",
     }
-    client.post("/api/integrations", json=payload)
+    client.post("/integrations", json=payload)
 
     # Trigger webhook with metadata matching this ID
     webhook_payload = {

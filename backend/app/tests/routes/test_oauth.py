@@ -2,7 +2,7 @@ from unittest.mock import patch, MagicMock, AsyncMock
 
 
 def test_google_login_redirect(client):
-    response = client.get("/api/oauth/google/login?user_id=123", follow_redirects=False)
+    response = client.get("/oauth/google/login?user_id=123", follow_redirects=False)
     # Check that it returns a 307 Temporary Redirect to Google's consent screen
     assert response.status_code == 307
     assert "accounts.google.com" in response.headers["location"]
@@ -10,9 +10,7 @@ def test_google_login_redirect(client):
 
 
 def test_facebook_login_redirect(client):
-    response = client.get(
-        "/api/oauth/facebook/login?user_id=456", follow_redirects=False
-    )
+    response = client.get("/oauth/facebook/login?user_id=456", follow_redirects=False)
     # Check that it returns a 307 Temporary Redirect to Facebook's OAuth page
     assert response.status_code == 307
     assert "facebook.com" in response.headers["location"]
@@ -43,7 +41,7 @@ def test_google_callback_success(mock_client_class, client):
     mock_client.get = AsyncMock(return_value=mock_info_resp)
 
     response = client.get(
-        "/api/oauth/google/callback",
+        "/oauth/google/callback",
         params={"code": "auth-code-123", "state": "99"},
         follow_redirects=False,
     )
@@ -87,7 +85,7 @@ def test_facebook_callback_success(mock_client_class, client):
     ]
 
     response = client.get(
-        "/api/oauth/facebook/callback",
+        "/oauth/facebook/callback",
         params={"code": "fb-code-123", "state": "100"},
         follow_redirects=False,
     )

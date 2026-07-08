@@ -25,7 +25,7 @@ class IntegrationConfigSchema(BaseModel):
     imap_password: Optional[str] = None
 
 
-@router.post("/api/integrations")
+@router.post("/integrations")
 def save_config(config: IntegrationConfigSchema):
     """
     Saves or updates integration credentials for a specific logged-in user.
@@ -36,7 +36,7 @@ def save_config(config: IntegrationConfigSchema):
     raise HTTPException(status_code=500, detail="Failed to save integrations config")
 
 
-@router.get("/api/integrations/{user_id}")
+@router.get("/integrations/{user_id}")
 def get_config(user_id: int):
     """
     Retrieves the integrations configuration for a specific user.
@@ -128,7 +128,7 @@ async def post_portal_webhook(request: Request, user_id: Optional[int] = None):
     }
 
 
-@router.post("/api/integrations/email/sync")
+@router.post("/integrations/email/sync")
 async def sync_emails(user_id: Optional[int] = None):
     """
     Triggers an IMAP connection to check for unread emails and processes
