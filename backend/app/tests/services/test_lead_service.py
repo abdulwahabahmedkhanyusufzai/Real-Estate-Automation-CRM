@@ -10,10 +10,10 @@ def test_system_prompt_generation():
     assert "budget" in prompt_whatsapp
 
     prompt_portal = get_system_prompt_by_source("Property Finder / Bayut")
-    assert "Property Finder" in prompt_portal
+    assert "real estate portal" in prompt_portal
 
     prompt_email = get_system_prompt_by_source("Email Inbox")
-    assert "Email" in prompt_email
+    assert "email" in prompt_email
 
     prompt_default = get_system_prompt_by_source("Other Source")
     assert "elite real estate" in prompt_default
