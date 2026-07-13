@@ -17,7 +17,6 @@ function App() {
   const [selectedModel, setSelectedModel] = useState<GeminiModel>('Gemma Model');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [activeView, setActiveView] = useState<'chat' | 'leads' | 'settings'>('leads');
 
   const [user, setUser] = useState<{ id: number; username: string } | null>(() => {
     const stored = localStorage.getItem('pixxi_user');
@@ -32,6 +31,13 @@ function App() {
   });
 
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  // Determine active view based on current path
+  const activeView: 'chat' | 'leads' | 'settings' = (() => {
+    if (currentPath === '/chat') return 'chat';
+    if (currentPath === '/settings') return 'settings';
+    return 'leads'; // Default/Fallback to leads for '/' or '/leads'
+  })();
 
   useEffect(() => {
     const handlePopState = () => {
@@ -49,9 +55,9 @@ function App() {
   // Redirect logic based on auth status and current url path
   useEffect(() => {
     if (user) {
-      // If logged in and on auth pages, redirect to dashboard root
-      if (currentPath === '/login' || currentPath === '/register') {
-        Promise.resolve().then(() => navigate('/'));
+      // If logged in and on auth pages or root, redirect to leads
+      if (currentPath === '/login' || currentPath === '/register' || currentPath === '/') {
+        Promise.resolve().then(() => navigate('/leads'));
       }
     } else {
       // If logged out and trying to access internal routes, redirect to landing page '/'
@@ -169,7 +175,6 @@ function App() {
     localStorage.removeItem('pixxi_user');
     setSessions([]);
     setCurrentSessionId(null);
-    setActiveView('leads');
     navigate('/login');
   };
 
@@ -406,7 +411,7 @@ function App() {
   };
 
   const handleQualifyLead = (lead: Lead) => {
-    setActiveView('chat');
+    navigate('/chat');
     const promptMessage = `Help me analyze and qualify this real estate lead:
 - Client Name: ${lead.name}
 - Email: ${lead.email}
@@ -473,7 +478,11 @@ Can you give me a summary profile and recommend next steps for this client?`;
         onNewChat={handleNewChat}
         openHelpModal={() => setIsHelpOpen(true)}
         activeView={activeView}
-        setActiveView={setActiveView}
+        setActiveView={(view) => {
+          if (view === 'chat') navigate('/chat');
+          else if (view === 'leads') navigate('/leads');
+          else if (view === 'settings') navigate('/settings');
+        }}
         user={user}
         onLogout={handleLogout}
       />
@@ -493,7 +502,7 @@ Can you give me a summary profile and recommend next steps for this client?`;
         <LeadInbox
           isSidebarOpen={sidebarOpen}
           setIsSidebarOpen={setSidebarOpen}
-          onToggleView={() => setActiveView('chat')}
+          onToggleView={() => navigate('/chat')}
           onQualifyLead={handleQualifyLead}
         />
       ) : (

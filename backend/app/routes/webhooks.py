@@ -7,7 +7,11 @@ from app.integrations.whatsapp import (
 )
 from app.integrations.email_imap import fetch_unread_emails
 from app.integrations.portal_webhook import parse_portal_webhook
-from app.services.lead_service import extract_omnichannel_lead
+from app.services.lead_service import (
+    extract_omnichannel_lead,
+    extract_lead_with_gemma,
+    generate_whatsapp_reply,
+)
 from app.services.integration_service import (
     save_user_integrations,
     get_user_integrations,
@@ -150,7 +154,7 @@ async def post_whatsapp_webhook(request: Request, background_tasks: BackgroundTa
                 user_config = get_user_integrations(user_id)
 
         # Qualify the lead using Gemma
-        qualified_data = extract_omnichannel_lead(message_data["message"], "WhatsApp")
+        qualified_data = await extract_lead_with_gemma(message_data["message"], "WhatsApp")
 
         _log(
             "info",
@@ -164,12 +168,15 @@ async def post_whatsapp_webhook(request: Request, background_tasks: BackgroundTa
             urgency=qualified_data.get("urgency"),
         )
 
+        # Generate a personalized reply using Gemma
+        reply_text = await generate_whatsapp_reply(message_data["name"], qualified_data)
+
         # --- SEND REPLY ---
         if user_config:
             access_token = user_config.get("whatsapp_access_token")
             success = await send_whatsapp_message(
                 to_phone=message_data["phone"],
-                text=f"Thank you {message_data['name']}! We've received your inquiry and our team will be in touch shortly.",
+                text=reply_text,
                 access_token=access_token,
                 phone_number_id=phone_number_id,
             )
