@@ -30,6 +30,9 @@ services:
       # Docker Compose automatically resolves service names to internal IPs
       - OLLAMA_API_BASE=http://gemma-backend:8080
       - PORT=8000
+      - DB_PATH=/app/data/users.db
+    volumes:
+      - ./backend-data:/app/data
     depends_on:
       - gemma-backend
     healthcheck:

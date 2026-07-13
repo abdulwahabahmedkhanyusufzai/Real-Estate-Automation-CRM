@@ -5,7 +5,7 @@ from app.core.config import BASE_DIR
 if os.getenv("TESTING") == "1":
     DB_PATH = os.path.join(BASE_DIR, "test_users.db")
 else:
-    DB_PATH = os.path.join(BASE_DIR, "users.db")
+    DB_PATH = os.getenv("DB_PATH", os.path.join(BASE_DIR, "users.db"))
 
 
 def init_db():

@@ -87,8 +87,8 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
 
   // Fetch integration settings from backend
   useEffect(() => {
-    if (!userId) return;
-    fetch(`/api/integrations/${userId}`)
+    const activeUserId = userId || 1;
+    fetch(`/api/integrations/${activeUserId}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.status === 'success' && data.config) {
@@ -118,27 +118,24 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
 
   const handleConnectWhatsApp = async () => {
     if (connections.whatsapp) {
-      if (userId) {
-        try {
-          const res = await fetch('/api/integrations', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              user_id: userId,
-              whatsapp_phone_number_id: null,
-              whatsapp_access_token: null,
-              whatsapp_verify_token: null
-            })
-          });
-          if (res.ok) {
-            setConnections(prev => ({ ...prev, whatsapp: false }));
-            setWhatsappConfig(null);
-          }
-        } catch (err) {
-          console.error('Error disconnecting WhatsApp:', err);
+      const activeUserId = userId || 1;
+      try {
+        const res = await fetch('/api/integrations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: activeUserId,
+            whatsapp_phone_number_id: null,
+            whatsapp_access_token: null,
+            whatsapp_verify_token: null
+          })
+        });
+        if (res.ok) {
+          setConnections(prev => ({ ...prev, whatsapp: false }));
+          setWhatsappConfig(null);
         }
-      } else {
-        setConnections({ ...connections, whatsapp: false });
+      } catch (err) {
+        console.error('Error disconnecting WhatsApp:', err);
       }
     } else {
       const targetUserId = userId || 1;
@@ -148,28 +145,25 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
 
   const handleConnectEmail = async () => {
     if (connections.email) {
-      if (userId) {
-        try {
-          const res = await fetch('/api/integrations', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              user_id: userId,
-              imap_host: null,
-              imap_port: 993,
-              imap_user: null,
-              imap_password: null
-            })
-          });
-          if (res.ok) {
-            setConnections(prev => ({ ...prev, email: false }));
-            setEmailCredentials({ imap: '', email: '', password: '' });
-          }
-        } catch (err) {
-          console.error('Error disconnecting Email:', err);
+      const activeUserId = userId || 1;
+      try {
+        const res = await fetch('/api/integrations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: activeUserId,
+            imap_host: null,
+            imap_port: 993,
+            imap_user: null,
+            imap_password: null
+          })
+        });
+        if (res.ok) {
+          setConnections(prev => ({ ...prev, email: false }));
+          setEmailCredentials({ imap: '', email: '', password: '' });
         }
-      } else {
-        setConnections({ ...connections, email: false });
+      } catch (err) {
+        console.error('Error disconnecting Email:', err);
       }
     } else {
       const targetUserId = userId || 1;

@@ -35,7 +35,7 @@ function App() {
   // Determine active view based on current path
   const activeView: 'chat' | 'leads' | 'settings' = (() => {
     if (currentPath === '/chat') return 'chat';
-    if (currentPath === '/settings') return 'settings';
+    if (currentPath === '/settings' || currentPath.startsWith('/integrations')) return 'settings';
     return 'leads'; // Default/Fallback to leads for '/' or '/leads'
   })();
 
