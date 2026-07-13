@@ -35,8 +35,8 @@ def register_user(username: str, password: str) -> Dict[str, Any]:
     password_hash, salt = hash_password(password)
 
     conn = connect_db()
-    cursor = conn.cursor()
     try:
+        cursor = conn.cursor()
         cursor.execute(
             "INSERT INTO users (username, password_hash, salt) VALUES (?, ?, ?)",
             (username, password_hash, salt),
@@ -54,22 +54,24 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     """Authenticates a user and returns user info, or None if authentication fails."""
     username = username.strip()
     conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT id, username, password_hash, salt FROM users WHERE username = ?",
-        (username,),
-    )
-    row = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, username, password_hash, salt FROM users WHERE username = ?",
+            (username,),
+        )
+        row = cursor.fetchone()
 
-    if not row:
-        # Run a dummy hash so response time is identical whether the user
-        # exists or not. Without this, an attacker can enumerate valid
-        # usernames by measuring which requests return faster (no DB hit).
-        hash_password(password)
+        if not row:
+            # Run a dummy hash so response time is identical whether the user
+            # exists or not. Without this, an attacker can enumerate valid
+            # usernames by measuring which requests return faster (no DB hit).
+            hash_password(password)
+            return None
+
+        user_id, username, password_hash, salt = row
+        if verify_password(password, password_hash, salt):
+            return {"id": user_id, "username": username}
         return None
-
-    user_id, username, password_hash, salt = row
-    if verify_password(password, password_hash, salt):
-        return {"id": user_id, "username": username}
-    return None
+    finally:
+        conn.close()
