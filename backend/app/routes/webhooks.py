@@ -154,7 +154,9 @@ async def post_whatsapp_webhook(request: Request, background_tasks: BackgroundTa
                 user_config = get_user_integrations(user_id)
 
         # Qualify the lead using Gemma
-        qualified_data = await extract_lead_with_gemma(message_data["message"], "WhatsApp")
+        qualified_data = await extract_lead_with_gemma(
+            message_data["message"], "WhatsApp"
+        )
 
         _log(
             "info",

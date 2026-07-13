@@ -97,11 +97,11 @@ async def extract_lead_with_gemma(raw_message: str, source: str) -> Dict[str, An
                     "model": model_name,
                     "messages": [
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": raw_message}
+                        {"role": "user", "content": raw_message},
                     ],
                     "stream": False,
-                    "format": "json"
-                }
+                    "format": "json",
+                },
             )
             if response.status_code == 200:
                 content = response.json().get("message", {}).get("content", "").strip()
@@ -112,10 +112,12 @@ async def extract_lead_with_gemma(raw_message: str, source: str) -> Dict[str, An
                         "area": parsed.get("area") or "Not Specified",
                         "property_type": parsed.get("property_type") or "Not Specified",
                         "bedrooms": parsed.get("bedrooms"),
-                        "urgency": parsed.get("urgency") or "Normal"
+                        "urgency": parsed.get("urgency") or "Normal",
                     }
     except Exception as e:
-        logger.warning(f"Failed to extract lead using Gemma (falling back to heuristics): {e}")
+        logger.warning(
+            f"Failed to extract lead using Gemma (falling back to heuristics): {e}"
+        )
 
     # Fallback to standard heuristic extraction
     return extract_omnichannel_lead(raw_message, source)
@@ -148,11 +150,7 @@ async def generate_whatsapp_reply(sender_name: str, lead_data: Dict[str, Any]) -
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
                 f"{ollama_base}/api/generate",
-                json={
-                    "model": model_name,
-                    "prompt": prompt,
-                    "stream": False
-                }
+                json={"model": model_name, "prompt": prompt, "stream": False},
             )
             if response.status_code == 200:
                 text = response.json().get("response", "").strip()
@@ -162,10 +160,10 @@ async def generate_whatsapp_reply(sender_name: str, lead_data: Dict[str, Any]) -
         logger.warning(f"Failed to generate WhatsApp reply with Gemma: {e}")
 
     # Fallback response
-    prop_type = lead_data.get('property_type')
-    if not prop_type or prop_type == 'Not Specified':
-        prop_type = 'property'
-    area = lead_data.get('area')
-    if not area or area == 'Not Specified':
-        area = 'Dubai'
+    prop_type = lead_data.get("property_type")
+    if not prop_type or prop_type == "Not Specified":
+        prop_type = "property"
+    area = lead_data.get("area")
+    if not area or area == "Not Specified":
+        area = "Dubai"
     return f"Hi {sender_name}! Thank you for your inquiry about a {prop_type} in {area}. One of our specialists will be in touch with you shortly!"
