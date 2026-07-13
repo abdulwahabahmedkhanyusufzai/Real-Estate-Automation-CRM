@@ -1,9 +1,20 @@
 from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import RedirectResponse
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 import httpx
 import urllib.parse
 from app.services.integration_service import save_user_integrations
+
+# Base directory of the adk-agent package
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Load environment variables from .env (check backend/.env first, then backend/app/.env)
+dotenv_path = BASE_DIR / ".env"
+if not dotenv_path.exists():
+    dotenv_path = BASE_DIR / "app" / ".env"
+load_dotenv(dotenv_path=dotenv_path)
 
 router = APIRouter(prefix="/oauth", tags=["OAuth"])
 
