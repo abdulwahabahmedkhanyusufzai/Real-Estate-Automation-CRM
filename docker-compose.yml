@@ -22,7 +22,7 @@ services:
     ports:
       - "8000:8080"
     env_file:
-      - ./backend/.env
+      - ./backend/app/.env
     environment:
       - GOOGLE_CLOUD_PROJECT=local-dev
       - GOOGLE_CLOUD_LOCATION=local

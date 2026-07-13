@@ -5,8 +5,10 @@ from dotenv import load_dotenv
 # Base directory of the adk-agent package
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Load environment variables from .env
+# Load environment variables from .env (check backend/.env first, then backend/app/.env)
 dotenv_path = BASE_DIR / ".env"
+if not dotenv_path.exists():
+    dotenv_path = BASE_DIR / "app" / ".env"
 load_dotenv(dotenv_path=dotenv_path)
 
 
