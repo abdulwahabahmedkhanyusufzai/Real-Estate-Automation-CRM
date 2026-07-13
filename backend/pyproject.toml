@@ -11,6 +11,7 @@ dependencies = [
     "google-auth>=2.23.0",
     "locust==2.37.10",
     "litellm==1.83.0",
+    "psycopg2-binary>=2.9.12",
 ]
 
 [dependency-groups]

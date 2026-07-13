@@ -13,6 +13,24 @@ services:
     volumes:
       - ./ollama-models:/root/.ollama
 
+  db:
+    image: postgres:16-alpine
+    container_name: production-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=pixxi
+      - POSTGRES_PASSWORD=pixxi_secure_pass_99
+      - POSTGRES_DB=pixxi_crm
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pixxi -d pixxi_crm"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -30,11 +48,11 @@ services:
       # Docker Compose automatically resolves service names to internal IPs
       - OLLAMA_API_BASE=http://gemma-backend:8080
       - PORT=8000
-      - DB_PATH=/app/data/users.db
-    volumes:
-      - ./backend-data:/app/data
+      - DATABASE_URL=postgresql://pixxi:pixxi_secure_pass_99@db:5432/pixxi_crm
     depends_on:
       - gemma-backend
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 5s

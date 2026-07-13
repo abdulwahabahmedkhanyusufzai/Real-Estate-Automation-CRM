@@ -1,7 +1,7 @@
 import sqlite3
 import logging
 from typing import Dict, Any, Optional
-from app.core.database import DB_PATH
+from app.core.database import connect_db
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ def save_user_integrations(user_id: int, data: Dict[str, Any]) -> bool:
     Saves or updates integration credentials for a specific user ID.
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = connect_db()
         cursor = conn.cursor()
 
         # Check if integrations already exist for this user
@@ -78,7 +78,7 @@ def get_user_integrations(user_id: int) -> Optional[Dict[str, Any]]:
     Fetches the integration settings/credentials for a specific user.
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = connect_db()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
@@ -108,7 +108,7 @@ def get_user_by_whatsapp_phone_id(phone_number_id: str) -> Optional[int]:
     Used to route incoming Meta webhooks to the correct tenant.
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = connect_db()
         cursor = conn.cursor()
 
         cursor.execute(
@@ -136,7 +136,7 @@ def is_whatsapp_message_processed(message_id: str) -> bool:
     when Meta retries webhook delivery after network glitches.
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute(
             "SELECT 1 FROM processed_whatsapp_messages WHERE message_id = ?",
@@ -156,7 +156,7 @@ def mark_whatsapp_message_processed(message_id: str) -> None:
     webhook deliveries from Meta are safely ignored.
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute(
             "INSERT OR IGNORE INTO processed_whatsapp_messages (message_id) VALUES (?)",
@@ -175,7 +175,7 @@ def flag_whatsapp_disconnected(user_id: int) -> None:
     The frontend will show 'Disconnected' status and prompt re-authentication.
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute(
             """

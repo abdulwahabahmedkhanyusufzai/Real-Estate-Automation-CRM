@@ -15,14 +15,13 @@ import hashlib
 import hmac
 import logging
 import os
-import sqlite3
 import time
 
 import httpx
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from app.core.database import DB_PATH
+from app.core.database import connect_db
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin")
@@ -60,13 +59,13 @@ def _verify_admin_key(request: Request) -> bool:
 
 async def _check_database() -> dict:
     """
-    Verifies SQLite is reachable and all required tables exist.
+    Verifies database is reachable and all required tables exist.
     Exception details are logged server-side only; the caller receives
     a generic opaque error code — never a raw exception string.
     """
     start = time.monotonic()
     try:
-        conn = sqlite3.connect(DB_PATH, timeout=3)
+        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = {row[0] for row in cursor.fetchall()}

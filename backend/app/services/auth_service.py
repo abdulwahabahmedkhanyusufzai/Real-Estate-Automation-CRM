@@ -3,7 +3,7 @@ import hmac
 import os
 import sqlite3
 from typing import Dict, Any, Optional
-from app.core.database import DB_PATH
+from app.core.database import connect_db
 
 
 def hash_password(password: str, salt: Optional[str] = None) -> tuple[str, str]:
@@ -34,7 +34,7 @@ def register_user(username: str, password: str) -> Dict[str, Any]:
 
     password_hash, salt = hash_password(password)
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = connect_db()
     cursor = conn.cursor()
     try:
         cursor.execute(
@@ -53,7 +53,7 @@ def register_user(username: str, password: str) -> Dict[str, Any]:
 def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     """Authenticates a user and returns user info, or None if authentication fails."""
     username = username.strip()
-    conn = sqlite3.connect(DB_PATH)
+    conn = connect_db()
     cursor = conn.cursor()
     cursor.execute(
         "SELECT id, username, password_hash, salt FROM users WHERE username = ?",
