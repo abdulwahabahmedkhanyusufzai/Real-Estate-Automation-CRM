@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import os
-import sqlite3
+import psycopg2
 from typing import Dict, Any, Optional
 from app.core.database import connect_db
 
@@ -13,16 +13,13 @@ def hash_password(password: str, salt: Optional[str] = None) -> tuple[str, str]:
     else:
         salt_bytes = bytes.fromhex(salt)
 
-    # Deriving hash
     key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt_bytes, 100000)
     return key.hex(), salt_bytes.hex()
 
 
 def verify_password(password: str, password_hash: str, salt: str) -> bool:
-    """Verifies a password against a hash and salt using constant-time comparison."""
+    """Verifies a password against a hash and salt."""
     key, _ = hash_password(password, salt)
-    # hmac.compare_digest prevents timing oracle attacks — comparison takes
-    # the same time regardless of how many characters match.
     return hmac.compare_digest(key, password_hash)
 
 
@@ -38,13 +35,13 @@ def register_user(username: str, password: str) -> Dict[str, Any]:
     try:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO users (username, password_hash, salt) VALUES (?, ?, ?)",
+            "INSERT INTO users (username, password_hash, salt) VALUES (%s, %s, %s) RETURNING id",
             (username, password_hash, salt),
         )
+        user_id = cursor.fetchone()[0]
         conn.commit()
-        user_id = cursor.lastrowid
         return {"id": user_id, "username": username}
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         raise ValueError("Username already exists")
     finally:
         conn.close()
@@ -57,7 +54,7 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     try:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, username, password_hash, salt FROM users WHERE username = ?",
+            "SELECT id, username, password_hash, salt FROM users WHERE username = %s",
             (username,),
         )
         row = cursor.fetchone()
@@ -69,9 +66,9 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
             hash_password(password)
             return None
 
-        user_id, username, password_hash, salt = row
+        user_id, username_val, password_hash, salt = row
         if verify_password(password, password_hash, salt):
-            return {"id": user_id, "username": username}
+            return {"id": user_id, "username": username_val}
         return None
     finally:
         conn.close()

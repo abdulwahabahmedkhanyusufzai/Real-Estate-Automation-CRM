@@ -67,7 +67,7 @@ async def _check_database() -> dict:
     try:
         conn = connect_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
         tables = {row[0] for row in cursor.fetchall()}
         conn.close()
         required = {"users", "user_integrations", "processed_whatsapp_messages"}

@@ -1,5 +1,5 @@
-import sqlite3
 import logging
+import psycopg2.extras
 from typing import Dict, Any, Optional
 from app.core.database import connect_db
 
@@ -10,23 +10,22 @@ def save_user_integrations(user_id: int, data: Dict[str, Any]) -> bool:
     """
     Saves or updates integration credentials for a specific user ID.
     """
+    conn = connect_db()
     try:
-        conn = connect_db()
         cursor = conn.cursor()
 
         # Ensure user exists in users table to satisfy foreign key constraint
-        from app.core.database import IS_POSTGRES
-        cursor.execute("SELECT 1 FROM users WHERE id = ?", (user_id,))
+        cursor.execute("SELECT 1 FROM users WHERE id = %s", (user_id,))
         if not cursor.fetchone():
             cursor.execute(
-                "INSERT INTO users (id, username, password_hash, salt) VALUES (?, 'fallback_user', 'dummy_hash', 'dummy_salt')",
-                (user_id,),
+                "INSERT INTO users (id, username, password_hash, salt) VALUES (%s, %s, 'dummy_hash', 'dummy_salt')",
+                (user_id, f"fallback_user_{user_id}"),
             )
-            if IS_POSTGRES:
-                cursor.execute("SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE((SELECT MAX(id) FROM users), 1))")
+            # Align primary key sequence for auto-increments
+            cursor.execute("SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE((SELECT MAX(id) FROM users), 1))")
 
         # Check if integrations already exist for this user
-        cursor.execute("SELECT id FROM user_integrations WHERE user_id = ?", (user_id,))
+        cursor.execute("SELECT id FROM user_integrations WHERE user_id = %s", (user_id,))
         exists = cursor.fetchone()
 
         if exists:
@@ -34,15 +33,15 @@ def save_user_integrations(user_id: int, data: Dict[str, Any]) -> bool:
             cursor.execute(
                 """
                 UPDATE user_integrations
-                SET whatsapp_phone_number_id = ?,
-                    whatsapp_access_token = ?,
-                    whatsapp_verify_token = ?,
-                    imap_host = ?,
-                    imap_port = ?,
-                    imap_user = ?,
-                    imap_password = ?,
+                SET whatsapp_phone_number_id = %s,
+                    whatsapp_access_token = %s,
+                    whatsapp_verify_token = %s,
+                    imap_host = %s,
+                    imap_port = %s,
+                    imap_user = %s,
+                    imap_password = %s,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = ?
+                WHERE user_id = %s
             """,
                 (
                     data.get("whatsapp_phone_number_id"),
@@ -62,7 +61,7 @@ def save_user_integrations(user_id: int, data: Dict[str, Any]) -> bool:
                 INSERT INTO user_integrations (
                     user_id, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_verify_token,
                     imap_host, imap_port, imap_user, imap_password
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
                 (
                     user_id,
@@ -77,33 +76,32 @@ def save_user_integrations(user_id: int, data: Dict[str, Any]) -> bool:
             )
 
         conn.commit()
-        conn.close()
         return True
     except Exception as e:
         logger.error(f"Error saving user integrations: {e}")
         return False
+    finally:
+        conn.close()
 
 
 def get_user_integrations(user_id: int) -> Optional[Dict[str, Any]]:
     """
     Fetches the integration settings/credentials for a specific user.
     """
+    conn = connect_db()
     try:
-        conn = connect_db()
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         cursor.execute(
             """
             SELECT whatsapp_phone_number_id, whatsapp_access_token, whatsapp_verify_token,
                    imap_host, imap_port, imap_user, imap_password
             FROM user_integrations
-            WHERE user_id = ?
+            WHERE user_id = %s
         """,
             (user_id,),
         )
         row = cursor.fetchone()
-        conn.close()
 
         if row:
             return dict(row)
@@ -111,6 +109,8 @@ def get_user_integrations(user_id: int) -> Optional[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Error retrieving user integrations: {e}")
         return None
+    finally:
+        conn.close()
 
 
 def get_user_by_whatsapp_phone_id(phone_number_id: str) -> Optional[int]:
@@ -118,19 +118,18 @@ def get_user_by_whatsapp_phone_id(phone_number_id: str) -> Optional[int]:
     Looks up which user owns a particular WhatsApp Phone Number ID.
     Used to route incoming Meta webhooks to the correct tenant.
     """
+    conn = connect_db()
     try:
-        conn = connect_db()
         cursor = conn.cursor()
 
         cursor.execute(
             """
             SELECT user_id FROM user_integrations
-            WHERE whatsapp_phone_number_id = ?
+            WHERE whatsapp_phone_number_id = %s
         """,
             (phone_number_id,),
         )
         row = cursor.fetchone()
-        conn.close()
 
         if row:
             return row[0]
@@ -138,6 +137,8 @@ def get_user_by_whatsapp_phone_id(phone_number_id: str) -> Optional[int]:
     except Exception as e:
         logger.error(f"Error mapping WhatsApp phone number to user: {e}")
         return None
+    finally:
+        conn.close()
 
 
 def is_whatsapp_message_processed(message_id: str) -> bool:
@@ -146,19 +147,20 @@ def is_whatsapp_message_processed(message_id: str) -> bool:
     already processed. Prevents duplicate lead qualification and replies
     when Meta retries webhook delivery after network glitches.
     """
+    conn = connect_db()
     try:
-        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT 1 FROM processed_whatsapp_messages WHERE message_id = ?",
+            "SELECT 1 FROM processed_whatsapp_messages WHERE message_id = %s",
             (message_id,),
         )
         result = cursor.fetchone()
-        conn.close()
         return result is not None
     except Exception as e:
         logger.error(f"Error checking idempotency for message {message_id}: {e}")
         return False
+    finally:
+        conn.close()
 
 
 def mark_whatsapp_message_processed(message_id: str) -> None:
@@ -166,17 +168,18 @@ def mark_whatsapp_message_processed(message_id: str) -> None:
     Records a WhatsApp message_id as processed so future duplicate
     webhook deliveries from Meta are safely ignored.
     """
+    conn = connect_db()
     try:
-        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT OR IGNORE INTO processed_whatsapp_messages (message_id) VALUES (?)",
+            "INSERT INTO processed_whatsapp_messages (message_id) VALUES (%s) ON CONFLICT (message_id) DO NOTHING",
             (message_id,),
         )
         conn.commit()
-        conn.close()
     except Exception as e:
         logger.error(f"Error marking message {message_id} as processed: {e}")
+    finally:
+        conn.close()
 
 
 def flag_whatsapp_disconnected(user_id: int) -> None:
@@ -185,21 +188,22 @@ def flag_whatsapp_disconnected(user_id: int) -> None:
     disconnected (e.g. when Meta returns 401 Unauthorized).
     The frontend will show 'Disconnected' status and prompt re-authentication.
     """
+    conn = connect_db()
     try:
-        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute(
             """
             UPDATE user_integrations
             SET whatsapp_disconnected = 1, updated_at = CURRENT_TIMESTAMP
-            WHERE user_id = ?
+            WHERE user_id = %s
             """,
             (user_id,),
         )
         conn.commit()
-        conn.close()
         logger.warning(
             f"WhatsApp integration flagged as disconnected for user {user_id}"
         )
     except Exception as e:
         logger.error(f"Error flagging WhatsApp disconnected for user {user_id}: {e}")
+    finally:
+        conn.close()
