@@ -21,6 +21,8 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8080"
+    env_file:
+      - ./backend/.env
     environment:
       - GOOGLE_CLOUD_PROJECT=local-dev
       - GOOGLE_CLOUD_LOCATION=local
@@ -30,6 +32,12 @@ services:
       - PORT=8000
     depends_on:
       - gemma-backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
    
   frontend:
     # Builds the React app under ./frontend and serves via Nginx
@@ -41,4 +49,5 @@ services:
     ports:
       - "8081:80"  # Exposes the UI to the public internet on standard port 80
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
