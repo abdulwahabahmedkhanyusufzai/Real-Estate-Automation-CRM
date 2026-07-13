@@ -43,8 +43,22 @@ app.include_router(oauth_router)
 app.include_router(admin_router)
 
 
+from fastapi.responses import JSONResponse
+from app.core.database import connect_db
+
 @app.get("/health")
 def health_check():
+    try:
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+        conn.close()
+    except Exception:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unhealthy", "service": "production-adk-agent", "reason": "database_unreachable"}
+        )
     return {"status": "healthy", "service": "production-adk-agent"}
 
 
