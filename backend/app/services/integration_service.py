@@ -14,6 +14,17 @@ def save_user_integrations(user_id: int, data: Dict[str, Any]) -> bool:
         conn = connect_db()
         cursor = conn.cursor()
 
+        # Ensure user exists in users table to satisfy foreign key constraint
+        from app.core.database import IS_POSTGRES
+        cursor.execute("SELECT 1 FROM users WHERE id = ?", (user_id,))
+        if not cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO users (id, username, password_hash, salt) VALUES (?, 'fallback_user', 'dummy_hash', 'dummy_salt')",
+                (user_id,),
+            )
+            if IS_POSTGRES:
+                cursor.execute("SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE((SELECT MAX(id) FROM users), 1))")
+
         # Check if integrations already exist for this user
         cursor.execute("SELECT id FROM user_integrations WHERE user_id = ?", (user_id,))
         exists = cursor.fetchone()
