@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Check, 
   Copy, 
@@ -74,6 +74,7 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
   });
 
   const [emailCredentials, setEmailCredentials] = useState({ imap: '', email: '', password: '' });
+  const [whatsappConfig, setWhatsappConfig] = useState<{ phone_number_id?: string; verify_token?: string } | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   
   // Navigation Tabs state
@@ -84,18 +85,92 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [apiSecretVisible, setApiSecretVisible] = useState(false);
 
-  const handleConnectWhatsApp = () => {
+  // Fetch integration settings from backend
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/integrations/${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.status === 'success' && data.config) {
+          const cfg = data.config;
+          const isWhatsappActive = !!cfg.whatsapp_phone_number_id && !cfg.whatsapp_disconnected;
+          const isEmailActive = !!cfg.imap_user;
+          setConnections(prev => ({
+            ...prev,
+            whatsapp: isWhatsappActive,
+            email: isEmailActive
+          }));
+          setWhatsappConfig({
+            phone_number_id: cfg.whatsapp_phone_number_id || '',
+            verify_token: cfg.whatsapp_verify_token || ''
+          });
+          if (cfg.imap_user) {
+            setEmailCredentials({
+              imap: cfg.imap_host || '',
+              email: cfg.imap_user || '',
+              password: cfg.imap_password || ''
+            });
+          }
+        }
+      })
+      .catch(err => console.error('Error loading integrations:', err));
+  }, [userId]);
+
+  const handleConnectWhatsApp = async () => {
     if (connections.whatsapp) {
-      setConnections({ ...connections, whatsapp: false });
+      if (userId) {
+        try {
+          const res = await fetch('/api/integrations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              whatsapp_phone_number_id: null,
+              whatsapp_access_token: null,
+              whatsapp_verify_token: null
+            })
+          });
+          if (res.ok) {
+            setConnections(prev => ({ ...prev, whatsapp: false }));
+            setWhatsappConfig(null);
+          }
+        } catch (err) {
+          console.error('Error disconnecting WhatsApp:', err);
+        }
+      } else {
+        setConnections({ ...connections, whatsapp: false });
+      }
     } else {
       const targetUserId = userId || 1;
       window.location.href = `/api/oauth/facebook/login?user_id=${targetUserId}`;
     }
   };
 
-  const handleConnectEmail = () => {
+  const handleConnectEmail = async () => {
     if (connections.email) {
-      setConnections({ ...connections, email: false });
+      if (userId) {
+        try {
+          const res = await fetch('/api/integrations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              imap_host: null,
+              imap_port: 993,
+              imap_user: null,
+              imap_password: null
+            })
+          });
+          if (res.ok) {
+            setConnections(prev => ({ ...prev, email: false }));
+            setEmailCredentials({ imap: '', email: '', password: '' });
+          }
+        } catch (err) {
+          console.error('Error disconnecting Email:', err);
+        }
+      } else {
+        setConnections({ ...connections, email: false });
+      }
     } else {
       const targetUserId = userId || 1;
       window.location.href = `/api/oauth/google/login?user_id=${targetUserId}`;
@@ -247,15 +322,55 @@ export default function IntegrationsManager({ userId }: IntegrationsManagerProps
                 </div>
                 
                 {connections.whatsapp && (
-                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-between transition-all duration-300 group-hover:bg-slate-100/50">
-                    <code className="text-[10px] text-slate-700 font-mono truncate mr-2 select-all">{`${window.location.origin}/webhooks/whatsapp`}</code>
-                    <button 
-                      onClick={() => handleCopy(`${window.location.origin}/webhooks/whatsapp`, "whatsapp")}
-                      className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded-md transition cursor-pointer active:scale-90"
-                      title="Copy webhook URL"
-                    >
-                      {copiedField === 'whatsapp' ? <Check className="w-3.5 h-3.5 text-[#01cb65]" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
+                  <div className="space-y-2.5 pt-1">
+                    {/* Webhook Callback URL */}
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block text-left">Callback Webhook URL</span>
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-between transition-all duration-300 group-hover:bg-slate-100/50">
+                        <code className="text-[10px] text-slate-700 font-mono truncate mr-2 select-all">{`${window.location.origin}/webhooks/whatsapp`}</code>
+                        <button 
+                          onClick={() => handleCopy(`${window.location.origin}/webhooks/whatsapp`, "whatsapp")}
+                          className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded-md transition cursor-pointer active:scale-90"
+                          title="Copy webhook URL"
+                        >
+                          {copiedField === 'whatsapp' ? <Check className="w-3.5 h-3.5 text-[#01cb65]" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* WhatsApp Phone Number ID */}
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block text-left">WhatsApp Phone Number ID</span>
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-between transition-all duration-300 group-hover:bg-slate-100/50">
+                        <code className="text-[10px] text-slate-700 font-mono truncate mr-2 select-all">{whatsappConfig?.phone_number_id || 'Not Loaded'}</code>
+                        {whatsappConfig?.phone_number_id && (
+                          <button 
+                            onClick={() => handleCopy(whatsappConfig.phone_number_id!, "phone_id")}
+                            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded-md transition cursor-pointer active:scale-90"
+                            title="Copy Phone ID"
+                          >
+                            {copiedField === 'phone_id' ? <Check className="w-3.5 h-3.5 text-[#01cb65]" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Webhook Verify Token */}
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block text-left">Webhook Verify Token</span>
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-between transition-all duration-300 group-hover:bg-slate-100/50">
+                        <code className="text-[10px] text-slate-700 font-mono truncate mr-2 select-all">{whatsappConfig?.verify_token || 'Not Loaded'}</code>
+                        {whatsappConfig?.verify_token && (
+                          <button 
+                            onClick={() => handleCopy(whatsappConfig.verify_token!, "verify_token")}
+                            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 rounded-md transition cursor-pointer active:scale-90"
+                            title="Copy Verify Token"
+                          >
+                            {copiedField === 'verify_token' ? <Check className="w-3.5 h-3.5 text-[#01cb65]" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

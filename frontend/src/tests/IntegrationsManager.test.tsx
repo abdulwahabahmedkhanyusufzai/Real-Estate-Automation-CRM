@@ -12,6 +12,16 @@ describe('IntegrationsManager Component', () => {
       assign: vi.fn(),
       replace: vi.fn()
     });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        status: 'success',
+        config: {
+          whatsapp_phone_number_id: 'wa-99',
+          whatsapp_verify_token: 'verify_user_99'
+        }
+      })
+    }));
   });
 
   afterEach(() => {
